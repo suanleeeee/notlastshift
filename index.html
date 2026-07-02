@@ -82,7 +82,7 @@ main {
 .page { display:none; }
 .page.active { display:flex; flex-direction:column; gap:12px; }
 
-/* ── CARD (exactly like reference — no border-radius) ── */
+/* ── CARD ── */
 .card { background:var(--bg-card); border:1px solid var(--border); }
 .card-title {
   font-family: 'Bebas Neue', sans-serif; font-size:14px; letter-spacing:3px;
@@ -92,7 +92,7 @@ main {
 .card-title .sub { font-family:'Noto Sans KR',sans-serif; font-size:10px; letter-spacing:1px; color:var(--ink-muted); }
 .card-title.red-title { color:var(--red); }
 
-/* ── STATS (exactly like reference) ── */
+/* ── STATS ── */
 .stats-row { display:grid; grid-template-columns:repeat(3,1fr); background:var(--bg-card); border:1px solid var(--border); }
 .stat-box { padding:14px 12px; border-right:1px solid var(--border); }
 .stat-box:last-child { border-right:none; }
@@ -108,42 +108,58 @@ main {
 .time-bar.done { background:var(--green); }
 .time-bar.red  { background:var(--red); }
 
-/* ── TASK LIST (exactly like reference) ── */
+/* ── TASK LIST ── */
 .task-list { max-height:400px; overflow-y:auto; }
 .task-list::-webkit-scrollbar { width:3px; }
 .task-list::-webkit-scrollbar-thumb { background:var(--border-blue); }
 
 .task-item {
   display:flex; align-items:center; gap:10px;
-  padding:13px 16px; border-bottom:1px solid var(--border);
+  padding:11px 16px; border-bottom:1px solid var(--border);
   transition:background .15s;
-  cursor:pointer;
   -webkit-tap-highlight-color:transparent;
 }
-.task-item:active { background:var(--bg-hover); }
 .task-item:last-child { border-bottom:none; }
-.task-item.done .task-text { color:var(--ink-muted); text-decoration:line-through; }
-
-/* Square checkbox — exactly like reference */
-.task-check {
-  width:20px; height:20px;
-  border:1.5px solid var(--border-blue);
-  cursor:pointer; flex-shrink:0;
-  display:flex; align-items:center; justify-content:center;
-  transition:all .15s;
-}
-.task-check.checked { background:var(--blue); border-color:var(--blue); }
-.task-check.checked::after { content:'✓'; color:white; font-size:11px; font-weight:bold; }
-.task-check.red-check { border-color:rgba(192,57,43,.35); }
-.task-check.red-check.checked { background:var(--red); border-color:var(--red); }
+.task-item.st-o .task-text { color:var(--ink-muted); text-decoration:line-through; }
+.task-item.st-x .task-text { color:rgba(192,57,43,0.55); text-decoration:line-through; }
+.task-item.st-s .task-text { color:var(--ink-muted); text-decoration:line-through; font-style:italic; }
 
 .task-text { flex:1; font-size:13px; color:var(--ink); }
 
-/* count badge like reference's task-dday */
+/* ── STATUS BUTTONS (O / X / —) ── */
+.status-btns {
+  display:flex; gap:3px; flex-shrink:0;
+}
+.sbtn {
+  width:28px; height:28px;
+  border:1.5px solid var(--border);
+  background:none; cursor:pointer;
+  font-family:'Bebas Neue',sans-serif; font-size:13px; line-height:1;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--ink-muted); transition:all .15s;
+  -webkit-tap-highlight-color:transparent;
+  flex-shrink:0;
+}
+.sbtn:active { opacity:.75; }
+.sbtn-o.active { background:var(--green); border-color:var(--green); color:white; }
+.sbtn-x.active { background:var(--red);   border-color:var(--red);   color:white; }
+.sbtn-s.active { background:var(--ink-sub); border-color:var(--ink-sub); color:white; }
+
+/* count badge */
 .time-count {
   font-family:'Bebas Neue',sans-serif; font-size:14px;
   color:var(--ink-muted); letter-spacing:1px; min-width:40px; text-align:right;
 }
+
+/* ── 근무 종료 버튼 (빨간 풀너비) ── */
+.btn-end-big {
+  display:block; width:100%;
+  background:var(--red); border:none; color:white;
+  padding:16px; font-family:'Bebas Neue',sans-serif;
+  font-size:18px; letter-spacing:3px; cursor:pointer;
+  transition:opacity .2s; -webkit-tap-highlight-color:transparent;
+}
+.btn-end-big:active { opacity:.82; }
 
 /* ── ALL DONE ── */
 .done-banner {
@@ -167,7 +183,6 @@ main {
   display:flex; align-items:center; justify-content:space-between;
   padding:12px 16px; border-bottom:1px solid var(--border);
   background:var(--bg-card);
-  transition:background .15s;
 }
 .past-item:last-child { border-bottom:none; }
 .past-date { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:16px; letter-spacing:.5px; font-style:italic; }
@@ -176,7 +191,7 @@ main {
 .badge-done    { background:rgba(29,111,66,.08); color:var(--green); }
 .badge-partial { background:var(--blue-pale); color:var(--blue); }
 
-/* ── TABS (exactly like reference) ── */
+/* ── TABS ── */
 .task-tabs {
   display:flex; border-bottom:1px solid var(--border);
   overflow-x:auto; scrollbar-width:none;
@@ -210,7 +225,7 @@ main {
 }
 .m-item-img img { width:100%; height:100%; object-fit:cover; }
 
-/* ── EDIT — input row (exactly like reference) ── */
+/* ── EDIT — input row ── */
 .input-row { display:flex; flex-wrap:wrap; border-bottom:1px solid var(--border); }
 .input-row input[type="text"] {
   width:100%; border:none; border-bottom:1px solid var(--border);
@@ -234,7 +249,6 @@ main {
 .edit-row:last-of-type { border-bottom:none; }
 .edit-row-text { flex:1; font-size:13px; }
 
-/* reference button styles */
 .btn-del  { background:none; border:none; color:var(--ink-muted); cursor:pointer; font-size:14px; padding:4px 8px; transition:color .15s; -webkit-tap-highlight-color:transparent; }
 .btn-del:hover  { color:var(--red); }
 .btn-edit { background:none; border:none; color:var(--ink-muted); cursor:pointer; font-size:14px; padding:4px 8px; transition:color .15s; -webkit-tap-highlight-color:transparent; }
@@ -249,7 +263,6 @@ main {
 .edit-input:focus { border-color:var(--border-blue); }
 textarea.edit-input { resize:vertical; font-size:15px; }
 
-/* btn-save like reference */
 .btn-save-inline {
   background:none; border:1px solid var(--border-blue); color:var(--blue);
   padding:5px 10px; font-family:'Bebas Neue',sans-serif;
@@ -258,14 +271,12 @@ textarea.edit-input { resize:vertical; font-size:15px; }
 }
 .btn-save-inline:hover { background:var(--blue-pale); }
 
-/* cat header in edit */
 .cat-hd {
   padding:10px 16px; border-bottom:1px solid var(--border);
   display:flex; align-items:center; gap:8px;
 }
 .cat-hd-name { font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:2px; color:var(--ink-sub); flex:1; }
 
-/* empty state (exactly like reference) */
 .empty-state { padding:32px 16px; text-align:center; font-size:11px; color:var(--ink-muted); letter-spacing:1px; }
 
 /* shift start button */
@@ -277,15 +288,8 @@ textarea.edit-input { resize:vertical; font-size:15px; }
   transition:opacity .2s; -webkit-tap-highlight-color:transparent;
 }
 .btn-start:active { opacity:.85; }
-.btn-end {
-  background:none; border:1px solid rgba(192,57,43,.35); color:var(--red);
-  padding:5px 12px; font-family:'Bebas Neue',sans-serif;
-  font-size:12px; letter-spacing:2px; cursor:pointer; transition:background .15s;
-  -webkit-tap-highlight-color:transparent;
-}
-.btn-end:hover { background:rgba(192,57,43,.07); }
 
-/* ── MODAL (reference style, bottom sheet for mobile) ── */
+/* ── MODAL ── */
 .modal-overlay {
   display:none; position:fixed; inset:0;
   background:rgba(0,0,0,0.35); z-index:200;
@@ -319,7 +323,7 @@ textarea.edit-input { resize:vertical; font-size:15px; }
 .modal-btn-ok:active { opacity:.85; }
 .modal-btn-cancel { background:none; border:1px solid var(--border) !important; color:var(--ink-sub); }
 
-/* ── BOTTOM NAV (styled like reference header bottom border) ── */
+/* ── BOTTOM NAV ── */
 .bottom-nav {
   position:fixed; bottom:0; left:0; right:0;
   background:rgba(248,248,246,0.96);
@@ -339,7 +343,6 @@ textarea.edit-input { resize:vertical; font-size:15px; }
 .nav-btn.active { color:var(--blue); }
 .nav-icon { font-size:18px; line-height:1; }
 
-/* mobile tap */
 * { -webkit-tap-highlight-color:transparent; }
 input, select, button { font-size:16px; }
 </style>
@@ -453,12 +456,11 @@ input, select, button { font-size:16px; }
         <div class="task-list" id="list-9"></div>
       </div>
 
+      <!-- 근무 종료 버튼 (done 배너 위, 빨간 풀너비) -->
+      <button class="btn-end-big" onclick="openModal('modal-end')">근무 종료</button>
+
       <div id="all-done" class="done-banner" style="display:none">
         ✨ &nbsp;모든 항목 완료! 퇴근 준비 끝났어요
-      </div>
-
-      <div style="display:flex;justify-content:flex-end">
-        <button class="btn-end" onclick="openModal('modal-end')">근무 종료 →</button>
       </div>
     </div>
 
@@ -492,6 +494,15 @@ input, select, button { font-size:16px; }
     <div class="card">
       <div class="card-title">MANUAL <span class="sub">메뉴얼 편집</span></div>
       <div id="edit-manual"></div>
+    </div>
+
+    <!-- 백업 다운로드 -->
+    <div class="card">
+      <div class="card-title">BACKUP <span class="sub">데이터 백업</span></div>
+      <div style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <span style="font-size:12px;color:var(--ink-sub)">매주 수요일 자동 백업 · 수동으로도 저장 가능해요</span>
+        <button class="btn-save-inline" style="white-space:nowrap" onclick="downloadBackup()">지금 저장</button>
+      </div>
     </div>
 
   </div>
@@ -562,15 +573,42 @@ const DEFAULTS = {
 const DAYS_KO = ['일','월','화','수','목','금','토'];
 function pad(n){ return String(n).padStart(2,'0'); }
 
+// ── 이전 데이터 마이그레이션 (checked → status) ──
+function migrateTask(t) {
+  if (!('status' in t)) {
+    t.status = t.checked ? 'o' : null;
+    delete t.checked;
+  }
+  return t;
+}
+function migrateShift(s) {
+  if (s && s.tasks) {
+    ['6','8','9'].forEach(k => {
+      if (s.tasks[k]) s.tasks[k] = s.tasks[k].map(migrateTask);
+    });
+  }
+  return s;
+}
+
 function load() {
-  try { return JSON.parse(localStorage.getItem('closing-v1')) || JSON.parse(JSON.stringify(DEFAULTS)); }
-  catch(e) { return JSON.parse(JSON.stringify(DEFAULTS)); }
+  try {
+    const raw = JSON.parse(localStorage.getItem('closing-v1'));
+    if (!raw) return JSON.parse(JSON.stringify(DEFAULTS));
+    if (raw.currentShift) raw.currentShift = migrateShift(raw.currentShift);
+    if (raw.shifts) raw.shifts = raw.shifts.map(migrateShift);
+    return raw;
+  } catch(e) { return JSON.parse(JSON.stringify(DEFAULTS)); }
 }
 function save(d) { try{ localStorage.setItem('closing-v1', JSON.stringify(d)); }catch(e){} }
 
 function dateStr(iso) {
   const d = new Date(iso + 'T12:00:00');
   return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${DAYS_KO[d.getDay()]}`;
+}
+function timeStr(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 function pathToUrl(p) {
   if (!p) return null;
@@ -587,6 +625,38 @@ function tick() {
     `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} ${DAYS_KO[now.getDay()]}요일`;
 }
 setInterval(tick, 1000); tick();
+
+// ── 매주 수요일 자동 백업 ─────────────────────────────
+function getWeekKey() {
+  const d = new Date();
+  const jan1 = new Date(d.getFullYear(), 0, 1);
+  const week = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+  return `${d.getFullYear()}-W${String(week).padStart(2,'0')}`;
+}
+
+function downloadBackup() {
+  const data = load();
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const now  = new Date();
+  a.href = url;
+  a.download = `마감체크리스트_백업_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function checkWeeklyBackup() {
+  const now = new Date();
+  if (now.getDay() !== 3) return; // 수요일(3)만
+  const key = 'backup-' + getWeekKey();
+  if (localStorage.getItem(key)) return; // 이미 이번 주에 백업함
+  localStorage.setItem(key, '1');
+  setTimeout(downloadBackup, 1500); // 앱 로드 후 자동 다운로드
+}
 
 // ── NAVIGATION ────────────────────────────────────────
 function showPage(name) {
@@ -608,7 +678,7 @@ function startShift() {
   const today = new Date().toISOString().split('T')[0];
   const shift = { id:Date.now(), date:today, startedAt:new Date().toISOString(), endedAt:null, tasks:{} };
   ['6','8','9'].forEach(k => {
-    shift.tasks[k] = data.templates[k].tasks.map(t => ({...t, checked:false}));
+    shift.tasks[k] = data.templates[k].tasks.map(t => ({...t, status: null}));
   });
   data.currentShift = shift;
   save(data); renderShift();
@@ -617,7 +687,7 @@ function startShift() {
 function renderShift() {
   const data = load();
   const s    = data.currentShift;
-  document.getElementById('no-shift').style.display    = s ? 'none' : 'block';
+  document.getElementById('no-shift').style.display     = s ? 'none' : 'block';
   document.getElementById('active-shift').style.display = s ? 'block': 'none';
   if (s) {
     ['6','8','9'].forEach(k => renderBlock(k, s.tasks[k]));
@@ -627,49 +697,58 @@ function renderShift() {
   document.getElementById('past-section').style.display = hasPast ? 'block' : 'none';
   if (hasPast) {
     document.getElementById('past-list').innerHTML = [...data.shifts].reverse().map(sh => {
-      const all  = Object.values(sh.tasks).flat();
-      const done = all.filter(t=>t.checked).length;
-      const full = all.length;
+      const all     = Object.values(sh.tasks).flat();
+      const done    = all.filter(t=>t.status==='o').length;
+      const handled = all.filter(t=>t.status).length;
+      const total   = all.length;
+      const endT    = sh.endedAt ? ' · 퇴근 ' + timeStr(sh.endedAt) : '';
       return `<div class="past-item">
         <div>
           <div class="past-date">${dateStr(sh.date)}</div>
-          <div class="past-meta">${done}/${full} 완료</div>
+          <div class="past-meta">${done}/${total} 완료${endT}</div>
         </div>
-        <span class="badge ${done===full?'badge-done':'badge-partial'}">${done===full?'완료':'미완료'}</span>
+        <span class="badge ${handled===total?'badge-done':'badge-partial'}">${handled===total?'완료':'미완료'}</span>
       </div>`;
     }).join('');
   }
 }
 
 function updateStats(s) {
-  const all   = Object.values(s.tasks).flat();
-  const done  = all.filter(t=>t.checked).length;
-  const total = all.length;
+  const all     = Object.values(s.tasks).flat();
+  const done    = all.filter(t=>t.status==='o').length;
+  const handled = all.filter(t=>t.status).length;
+  const total   = all.length;
   document.getElementById('stat-done').textContent  = done;
-  document.getElementById('stat-left').textContent  = total - done;
+  document.getElementById('stat-left').textContent  = total - handled;
   document.getElementById('stat-total').textContent = total;
-  document.getElementById('all-done').style.display = done===total && total>0 ? 'flex' : 'none';
+  document.getElementById('all-done').style.display = handled===total && total>0 ? 'flex' : 'none';
 }
 
 function renderBlock(k, tasks) {
-  const done  = tasks.filter(t=>t.checked).length;
-  const total = tasks.length;
-  const bar   = document.getElementById('bar-'+k);
-  bar.style.width = (total ? done/total*100 : 0) + '%';
-  if (done===total && total>0) bar.classList.add('done'); else bar.classList.remove('done');
-  document.getElementById('count-'+k).textContent = `${done}/${total}`;
-  const isCrit = k==='9';
-  document.getElementById('list-'+k).innerHTML = tasks.map((t,i) => `
-    <div class="task-item ${t.checked?'done':''}" onclick="toggle('${k}',${i})">
-      <div class="task-check ${isCrit?'red-check':''} ${t.checked?'checked':''}"></div>
+  const handled = tasks.filter(t=>t.status).length;
+  const total   = tasks.length;
+  const bar     = document.getElementById('bar-'+k);
+  bar.style.width = (total ? handled/total*100 : 0) + '%';
+  if (handled===total && total>0) bar.classList.add('done'); else bar.classList.remove('done');
+  document.getElementById('count-'+k).textContent = `${handled}/${total}`;
+  document.getElementById('list-'+k).innerHTML = tasks.map((t,i) => {
+    const sc = t.status==='o' ? 'st-o' : t.status==='x' ? 'st-x' : t.status==='skip' ? 'st-s' : '';
+    return `<div class="task-item ${sc}">
       <div class="task-text">${t.text}</div>
-    </div>`).join('');
+      <div class="status-btns">
+        <button class="sbtn sbtn-o ${t.status==='o'?'active':''}"    onclick="setStatus('${k}',${i},'o')">O</button>
+        <button class="sbtn sbtn-x ${t.status==='x'?'active':''}"    onclick="setStatus('${k}',${i},'x')">X</button>
+        <button class="sbtn sbtn-s ${t.status==='skip'?'active':''}" onclick="setStatus('${k}',${i},'skip')">−</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-function toggle(k, i) {
+function setStatus(k, i, val) {
   const data = load();
   if (!data.currentShift) return;
-  data.currentShift.tasks[k][i].checked = !data.currentShift.tasks[k][i].checked;
+  const task = data.currentShift.tasks[k][i];
+  task.status = (task.status === val) ? null : val; // 같은 버튼 누르면 해제
   save(data);
   renderBlock(k, data.currentShift.tasks[k]);
   updateStats(data.currentShift);
@@ -734,7 +813,7 @@ function renderEdit() {
 function renderEditTasks(data) {
   document.getElementById('edit-tasks').innerHTML =
     ['6','8','9'].map((k,ki) => {
-      const tmpl = data.templates[k];
+      const tmpl  = data.templates[k];
       const isCrit = k==='9';
       return `
         <div>
@@ -866,6 +945,7 @@ function saveItem() {
 (function() {
   if (!localStorage.getItem('closing-v1')) save(JSON.parse(JSON.stringify(DEFAULTS)));
   renderShift();
+  checkWeeklyBackup();
 })();
 </script>
 </body>
