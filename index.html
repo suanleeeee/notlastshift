@@ -839,35 +839,34 @@ let _editPastIdx = null;
 function editPastShift(idx) {
   const data = load();
   const sh   = data.shifts[idx];
+  if (!sh) return;
   _editPastIdx = idx;
   document.getElementById('ep-date').value  = sh.date || '';
-  const sd = sh.startedAt ? new Date(sh.startedAt) : null;
-  const ed = sh.endedAt   ? new Date(sh.endedAt)   : null;
-  document.getElementById('ep-start').value = sd ? `${pad(sd.getHours())}:${pad(sd.getMinutes())}` : '';
-  document.getElementById('ep-end').value   = ed ? `${pad(ed.getHours())}:${pad(ed.getMinutes())}` : '';
+  document.getElementById('ep-start').value = sh.startedAt ? timeStr(sh.startedAt) : '';
+  document.getElementById('ep-end').value   = sh.endedAt   ? timeStr(sh.endedAt)   : '';
   openModal('modal-edit-past');
 }
 function savePastShift() {
   const data = load();
-  const sh   = data.shifts[_editPastIdx];
-  const newDate  = document.getElementById('ep-date').value;
-  const newStart = document.getElementById('ep-start').value;
-  const newEnd   = document.getElementById('ep-end').value;
+  if (_editPastIdx === null || !data.shifts[_editPastIdx]) {
+    closeModal('modal-edit-past'); return;
+  }
+  const sh = data.shifts[_editPastIdx];
+  const newDate  = document.getElementById('ep-date').value;  // YYYY-MM-DD
+  const newStart = document.getElementById('ep-start').value; // HH:MM
+  const newEnd   = document.getElementById('ep-end').value;   // HH:MM
+
+  const baseDate = newDate || sh.date;
   if (newDate) sh.date = newDate;
-  if (newStart) {
-    const [h,m] = newStart.split(':').map(Number);
-    const base  = new Date(sh.startedAt || (sh.date + 'T00:00:00'));
-    if (newDate) { const [y,mo,d] = newDate.split('-').map(Number); base.setFullYear(y,mo-1,d); }
-    base.setHours(h, m, 0, 0);
-    sh.startedAt = base.toISOString();
+
+  // 로컬 시간 문자열로 ISO 생성 (YYYY-MM-DDTHH:MM:00 → 브라우저가 로컬로 파싱)
+  if (newStart && baseDate) {
+    sh.startedAt = new Date(baseDate + 'T' + newStart + ':00').toISOString();
   }
-  if (newEnd) {
-    const [h,m] = newEnd.split(':').map(Number);
-    const base  = new Date(sh.endedAt || (sh.date + 'T00:00:00'));
-    if (newDate) { const [y,mo,d] = newDate.split('-').map(Number); base.setFullYear(y,mo-1,d); }
-    base.setHours(h, m, 0, 0);
-    sh.endedAt = base.toISOString();
+  if (newEnd && baseDate) {
+    sh.endedAt = new Date(baseDate + 'T' + newEnd + ':00').toISOString();
   }
+
   save(data);
   closeModal('modal-edit-past');
   renderShift();
@@ -919,10 +918,10 @@ function renderShift() {
           <div class="past-date">${dateStr(sh.date)}</div>
           <div class="past-meta">${done}/${total} 완료${endT}</div>
         </div>
-        <div style="display:flex;align-items:center;gap:2px">
+        <div style="display:flex;align-items:center;gap:6px">
           <span class="badge ${handled===total?'badge-done':'badge-partial'}">${handled===total?'완료':'미완료'}</span>
-          <button class="btn-edit" onclick="editPastShift(${realIdx})">✎</button>
-          <button class="btn-del"  onclick="deletePastShift(${realIdx})">✕</button>
+          <button onclick="editPastShift(${realIdx})" style="background:none;border:1px solid var(--border-blue);color:var(--blue);font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">수정</button>
+          <button onclick="deletePastShift(${realIdx})" style="background:none;border:1px solid rgba(192,57,43,.3);color:var(--red);font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">삭제</button>
         </div>
       </div>`;
     }).join('');
