@@ -115,7 +115,11 @@ main {
 .btn-cancel-shift:active { color:var(--ink-sub); }
 .shift-start-badge {
   font-size:10px; color:var(--ink-muted); letter-spacing:1px;
+  cursor:pointer;
+  text-decoration:underline dotted; text-underline-offset:2px;
+  -webkit-tap-highlight-color:transparent;
 }
+.shift-start-badge:empty { cursor:default; text-decoration:none; }
 
 /* ── TIME PROGRESS ── */
 .time-prog { height:2px; background:var(--border); }
@@ -406,6 +410,21 @@ input, select, button { font-size:16px; }
 </head>
 <body>
 
+<!-- 출근 시간 수정 모달 -->
+<div class="modal-overlay" id="modal-edit-start" onclick="closeModal('modal-edit-start')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-title">출근 시간 수정</div>
+    <div class="modal-field">
+      <label>출근 시간</label>
+      <input type="time" id="edit-start-time">
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn-cancel" onclick="closeModal('modal-edit-start')">취소</button>
+      <button class="modal-btn-ok"     onclick="saveStartTime()">저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- 근무 취소 모달 -->
 <div class="modal-overlay" id="modal-cancel" onclick="closeModal('modal-cancel')">
   <div class="modal-box" onclick="event.stopPropagation()">
@@ -517,7 +536,7 @@ input, select, button { font-size:16px; }
       <!-- 출근 시간 + 취소 버튼 -->
       <div class="shift-meta-row">
         <button class="btn-cancel-shift" onclick="openModal('modal-cancel')">← 잘못 눌렀어요</button>
-        <span class="shift-start-badge" id="shift-start-badge"></span>
+        <span class="shift-start-badge" id="shift-start-badge" onclick="editStartTime()"></span>
       </div>
 
       <div class="stats-row">
@@ -770,6 +789,27 @@ function startShift() {
   });
   data.currentShift = shift;
   save(data); renderShift();
+}
+
+function editStartTime() {
+  const data = load();
+  if (!data.currentShift) return;
+  const d = new Date(data.currentShift.startedAt);
+  document.getElementById('edit-start-time').value = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  openModal('modal-edit-start');
+}
+function saveStartTime() {
+  const val = document.getElementById('edit-start-time').value;
+  if (!val) return;
+  const data = load();
+  if (!data.currentShift) return;
+  const [h, m] = val.split(':').map(Number);
+  const d = new Date(data.currentShift.startedAt);
+  d.setHours(h, m, 0, 0);
+  data.currentShift.startedAt = d.toISOString();
+  save(data);
+  closeModal('modal-edit-start');
+  renderShift();
 }
 
 function cancelShift(doSave) {
