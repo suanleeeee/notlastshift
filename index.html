@@ -410,6 +410,29 @@ input, select, button { font-size:16px; }
 </head>
 <body>
 
+<!-- 근무 기록 수정 모달 -->
+<div class="modal-overlay" id="modal-edit-past" onclick="closeModal('modal-edit-past')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-title">근무 기록 수정</div>
+    <div class="modal-field">
+      <label>날짜</label>
+      <input type="date" id="ep-date">
+    </div>
+    <div class="modal-field">
+      <label>출근 시간</label>
+      <input type="time" id="ep-start">
+    </div>
+    <div class="modal-field">
+      <label>퇴근 시간</label>
+      <input type="time" id="ep-end">
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn-cancel" onclick="closeModal('modal-edit-past')">취소</button>
+      <button class="modal-btn-ok"     onclick="savePastShift()">저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- 출근 시간 수정 모달 -->
 <div class="modal-overlay" id="modal-edit-start" onclick="closeModal('modal-edit-start')">
   <div class="modal-box" onclick="event.stopPropagation()">
@@ -811,6 +834,51 @@ function saveStartTime() {
   renderShift();
 }
 
+// ── 근무 기록 수정/삭제 ───────────────────────────────
+let _editPastIdx = null;
+function editPastShift(idx) {
+  const data = load();
+  const sh   = data.shifts[idx];
+  _editPastIdx = idx;
+  document.getElementById('ep-date').value  = sh.date || '';
+  const sd = sh.startedAt ? new Date(sh.startedAt) : null;
+  const ed = sh.endedAt   ? new Date(sh.endedAt)   : null;
+  document.getElementById('ep-start').value = sd ? `${pad(sd.getHours())}:${pad(sd.getMinutes())}` : '';
+  document.getElementById('ep-end').value   = ed ? `${pad(ed.getHours())}:${pad(ed.getMinutes())}` : '';
+  openModal('modal-edit-past');
+}
+function savePastShift() {
+  const data = load();
+  const sh   = data.shifts[_editPastIdx];
+  const newDate  = document.getElementById('ep-date').value;
+  const newStart = document.getElementById('ep-start').value;
+  const newEnd   = document.getElementById('ep-end').value;
+  if (newDate) sh.date = newDate;
+  if (newStart) {
+    const [h,m] = newStart.split(':').map(Number);
+    const base  = new Date(sh.startedAt || (sh.date + 'T00:00:00'));
+    if (newDate) { const [y,mo,d] = newDate.split('-').map(Number); base.setFullYear(y,mo-1,d); }
+    base.setHours(h, m, 0, 0);
+    sh.startedAt = base.toISOString();
+  }
+  if (newEnd) {
+    const [h,m] = newEnd.split(':').map(Number);
+    const base  = new Date(sh.endedAt || (sh.date + 'T00:00:00'));
+    if (newDate) { const [y,mo,d] = newDate.split('-').map(Number); base.setFullYear(y,mo-1,d); }
+    base.setHours(h, m, 0, 0);
+    sh.endedAt = base.toISOString();
+  }
+  save(data);
+  closeModal('modal-edit-past');
+  renderShift();
+}
+function deletePastShift(idx) {
+  if (!confirm('이 근무 기록을 삭제할까요?')) return;
+  const data = load();
+  data.shifts.splice(idx, 1);
+  save(data); renderShift();
+}
+
 function cancelShift(doSave) {
   const data = load();
   if (data.currentShift) {
@@ -838,7 +906,9 @@ function renderShift() {
   const hasPast = data.shifts.length > 0;
   document.getElementById('past-section').style.display = hasPast ? 'block' : 'none';
   if (hasPast) {
-    document.getElementById('past-list').innerHTML = [...data.shifts].reverse().map(sh => {
+    const total_shifts = data.shifts.length;
+    document.getElementById('past-list').innerHTML = [...data.shifts].reverse().map((sh, dispIdx) => {
+      const realIdx = total_shifts - 1 - dispIdx;
       const all     = Object.values(sh.tasks).flat();
       const done    = all.filter(t=>t.status==='o').length;
       const handled = all.filter(t=>t.status).length;
@@ -849,7 +919,11 @@ function renderShift() {
           <div class="past-date">${dateStr(sh.date)}</div>
           <div class="past-meta">${done}/${total} 완료${endT}</div>
         </div>
-        <span class="badge ${handled===total?'badge-done':'badge-partial'}">${handled===total?'완료':'미완료'}</span>
+        <div style="display:flex;align-items:center;gap:2px">
+          <span class="badge ${handled===total?'badge-done':'badge-partial'}">${handled===total?'완료':'미완료'}</span>
+          <button class="btn-edit" onclick="editPastShift(${realIdx})">✎</button>
+          <button class="btn-del"  onclick="deletePastShift(${realIdx})">✕</button>
+        </div>
       </div>`;
     }).join('');
   }
