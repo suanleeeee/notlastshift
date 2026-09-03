@@ -147,7 +147,16 @@ main {
 }
 .wc-start:active { opacity:.85; }
 .wc-done { font-size:11px; color:var(--green); font-weight:700; letter-spacing:.5px; }
-.week-foot { padding:10px 16px; border-top:1px solid var(--border); }
+.week-foot { padding:12px 14px; border-top:1px solid var(--border); }
+.btn-start {
+  display:block; width:100%;
+  background:var(--blue); border:none; color:white;
+  padding:15px; font-family:'Bebas Neue',sans-serif;
+  font-size:17px; letter-spacing:3px; cursor:pointer;
+  transition:opacity .2s; -webkit-tap-highlight-color:transparent;
+}
+.btn-start:active { opacity:.85; }
+.week-foot-hint { font-size:11px; color:var(--ink-muted); text-align:center; margin-top:9px; line-height:1.5; }
 .lnk {
   background:none; border:none; color:var(--blue); font-size:11px; cursor:pointer;
   font-family:'Noto Sans KR',sans-serif; padding:0; text-decoration:underline;
@@ -622,7 +631,7 @@ input, select, button { font-size:16px; }
 <nav class="bottom-nav">
   <button class="nav-btn active" id="nav-shift" onclick="showPage('shift')">
     <span class="nav-icon">☑</span>
-    체크리스트
+    근무
   </button>
   <button class="nav-btn" id="nav-stats" onclick="showPage('stats')">
     <span class="nav-icon">📊</span>
@@ -1138,13 +1147,17 @@ function renderShift() {
   }).join('');
 
   const foot = document.getElementById('week-foot');
+  const doneToday = data.shifts.some(x => x.date === today && x.endedAt);
   if (s) {
     foot.style.display = 'none';
   } else {
     foot.style.display = 'block';
-    foot.innerHTML = targetH > 0
-      ? `<span style="font-size:11px;color:var(--ink-muted)">근무일 두 번 탭 → 이번 주 시간 수정 &nbsp;·&nbsp; </span><button class="lnk" onclick="startShift()">예정 외 근무 시작</button>`
-      : `<button class="lnk" onclick="showPage('edit')">편집 탭에서 고정 근무일 설정하기 →</button>`;
+    const hint = targetH > 0
+      ? '근무일을 두 번 탭하면 이번 주 시간만 수정할 수 있어요'
+      : '편집 탭에서 고정 근무일을 먼저 설정해두면 편해요';
+    foot.innerHTML = doneToday
+      ? `<div class="week-foot-hint">오늘 마감 완료 · 다시 시작하려면 아래 버튼</div><button class="btn-start" onclick="startShift()">근무 다시 시작</button>`
+      : `<button class="btn-start" onclick="startShift()">근무 시작</button><div class="week-foot-hint">${hint}</div>`;
   }
 
   document.getElementById('active-shift').style.display = s ? 'block' : 'none';
@@ -1410,7 +1423,7 @@ function renderFixedDays(data) {
       <button class="btn-save-inline" onclick="downloadICS()">📅 이번 주 캘린더 (.ics)</button>
       ${notifyBtn}
     </div>
-    <div class="modal-hint" style="margin-top:10px">이번 주 특정 날만 바꾸려면 체크리스트 화면에서 그 날을 두 번 탭하세요.</div>`;
+    <div class="modal-hint" style="margin-top:10px">이번 주 특정 날만 바꾸려면 근무 화면에서 그 날을 두 번 탭하세요.</div>`;
 }
 function saveFixedDays() {
   const data = load();
