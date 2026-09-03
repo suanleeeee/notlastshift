@@ -508,18 +508,19 @@ input, select, button { font-size:16px; }
   </div>
 </div>
 
-<!-- 대타 · 예정 외 근무 모달 -->
+<!-- 대타 출동이요 모달 -->
 <div class="modal-overlay" id="modal-extra" onclick="closeModal('modal-extra')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-title">대타 출동이요🚨</div>
     <div class="modal-field"><label>날짜</label><input type="date" id="ex-date"></div>
     <div class="modal-field"><label>출근</label><input type="time" id="ex-start"></div>
     <div class="modal-field"><label>퇴근</label><input type="time" id="ex-end"></div>
-    <div class="modal-hint">이번 주 근무로 등록돼요. 날짜가 오늘이면 바로 근무가 시작됩니다.</div>
+    <div class="modal-hint">지금 대타 뛰러 왔으면 <b>지금 근무 시작</b>. 나중 날짜 대타면 <b>스케줄만 등록</b>.</div>
     <div class="modal-btns">
       <button class="modal-btn-cancel" onclick="closeModal('modal-extra')">취소</button>
-      <button class="modal-btn-ok"     onclick="extraSave()">등록</button>
+      <button class="modal-btn-ok"     onclick="extraStart()">지금 근무 시작</button>
     </div>
+    <button class="modal-sub-btn" style="border:1px solid var(--border-blue);color:var(--blue)" onclick="extraSchedule()">스케줄만 등록 (선택한 날짜)</button>
   </div>
 </div>
 
@@ -724,8 +725,25 @@ function clone(o){ return JSON.parse(JSON.stringify(o)); }
 function has(o,k){ return Object.prototype.hasOwnProperty.call(o,k); }
 
 // ── 마이그레이션 ──────────────────────────────────────
-function migrateTask(t){ if(!('status' in t)){ t.status = t.checked?'o':null; delete t.checked; } return t; }
-function migrateShift(s){ if(s&&s.tasks)['6','8','9'].forEach(k=>{ if(s.tasks[k]) s.tasks[k]=s.tasks[k].map(migrateTask); }); return s; }
+function migrateTask(t){ if(!t) return {text:'',status:null}; if(!('status' in t)){ t.status = t.checked?'o':null; delete t.checked; } return t; }
+function migrateShift(s){
+  if (!s) return s;
+  s.tasks = (s.tasks && typeof s.tasks === 'object') ? s.tasks : {};
+  ['6','8','9'].forEach(k => { if (Array.isArray(s.tasks[k])) s.tasks[k] = s.tasks[k].map(migrateTask); });
+  return s;
+}
+// 근무 중 shift 는 3블록이 모두 배열이어야 함 — 깨졌으면 템플릿에서 복구
+function ensureShiftBlocks(shift, templates) {
+  if (!shift) return shift;
+  shift.tasks = (shift.tasks && typeof shift.tasks === 'object') ? shift.tasks : {};
+  ['6','8','9'].forEach(k => {
+    if (!Array.isArray(shift.tasks[k])) {
+      const src = (templates && templates[k] && templates[k].tasks) || DEFAULTS.templates[k].tasks;
+      shift.tasks[k] = src.map(t => ({ ...t, status: null }));
+    }
+  });
+  return shift;
+}
 
 function load() {
   let raw;
@@ -740,8 +758,16 @@ function load() {
   if (!d.settings.wage)        d.settings.wage = 11000;
   delete d.settings.web3key;
 
-  if (raw.currentShift) d.currentShift = migrateShift(raw.currentShift);
-  if (raw.shifts) d.shifts = raw.shifts.map(migrateShift);
+  // templates 정규화 (currentShift 복구보다 먼저)
+  if (!d.templates || typeof d.templates !== 'object') d.templates = clone(DEFAULTS.templates);
+  const renamedLabels = { "6":"입장 직후", "8":"커피 마감", "9":"퇴근 직전" };
+  ['6','8','9'].forEach(k => {
+    if (!d.templates[k] || !Array.isArray(d.templates[k].tasks)) d.templates[k] = clone(DEFAULTS.templates[k]);
+    if (d.templates[k].label === renamedLabels[k]) d.templates[k].label = DEFAULTS.templates[k].label;
+  });
+
+  if (raw.currentShift) d.currentShift = ensureShiftBlocks(migrateShift(raw.currentShift), d.templates);
+  if (raw.shifts) d.shifts = (Array.isArray(raw.shifts) ? raw.shifts : []).map(migrateShift);
 
   // weekSchedule.days (구버전) → overrides
   if (d.weekSchedule) {
@@ -750,11 +776,6 @@ function load() {
     if (!d.weekSchedule.overrides) d.weekSchedule.overrides = {};
   }
 
-  const renamedLabels = { "6":"입장 직후", "8":"커피 마감", "9":"퇴근 직전" };
-  ['6','8','9'].forEach(k => {
-    if (!d.templates[k]) d.templates[k] = clone(DEFAULTS.templates[k]);
-    if (d.templates[k].label === renamedLabels[k]) d.templates[k].label = DEFAULTS.templates[k].label;
-  });
   delete d.manual;
   return d;
 }
@@ -966,7 +987,7 @@ function showCheer(shift) {
 function closeCheer(){ document.getElementById('cheer-overlay').classList.remove('show'); }
 
 function computeGrade(shift) {
-  const all = Object.values(shift.tasks).flat();
+  const all = allTasks(shift);
   if (!all.length) return { perfect:false };
   const noX        = !all.some(t => t.status === 'x');
   const allHandled = all.every(t => t.status === 'o' || t.status === 'skip');
@@ -1105,16 +1126,46 @@ function openExtra() {
   document.getElementById('ex-end').value   = t.end;
   openModal('modal-extra');
 }
-function extraSave() {
-  const date  = document.getElementById('ex-date').value;
-  const start = document.getElementById('ex-start').value;
-  const end   = document.getElementById('ex-end').value;
+function _extraTimes() {
+  return {
+    start: document.getElementById('ex-start').value,
+    end:   document.getElementById('ex-end').value,
+    date:  document.getElementById('ex-date').value
+  };
+}
+
+// "지금 근무 시작" — 날짜와 무관하게 오늘 바로 대타 근무 시작
+function extraStart() {
+  const { start, end } = _extraTimes();
+  if (!start || !end) { toast('출근·퇴근 시간을 입력하세요'); return; }
+  const data = load();
+  if (data.currentShift) { toast('이미 근무 중이에요'); closeModal('modal-extra'); showPage('shift'); return; }
+
+  const today = todayISO();
+  _ensureWeekSchedule(data);
+  data.weekSchedule.overrides[today] = { start, end };     // 오늘 스케줄·급여에 반영
+  if (data.settings.notifiedFor) delete data.settings.notifiedFor[today];
+
+  const shift = { id: Date.now(), date: today, startedAt: new Date().toISOString(), endedAt: null,
+                  planned: { start, end }, tasks: {} };
+  ['6','8','9'].forEach(k => { shift.tasks[k] = data.templates[k].tasks.map(t => ({...t, status:null})); });
+  data.currentShift = shift;
+  save(data);
+
+  closeModal('modal-extra');
+  showPage('shift');
+  renderShift();
+  toast('대타 근무 시작! 오늘도 파이팅 🚨');
+}
+
+// "스케줄만 등록" — 선택한 날짜에 대타 근무를 잡아두기 (시작하지 않음)
+function extraSchedule() {
+  const { date, start, end } = _extraTimes();
   if (!date || !start || !end) { toast('날짜와 시간을 모두 입력하세요'); return; }
 
   const data = load();
   const inCurWeek = isoWeekInfo(new Date(date + 'T12:00:00')).key === isoWeekInfo(new Date()).key;
-  const isToday = date === todayISO();
-  const isPast  = date < todayISO();
+  const isPast = date < todayISO();
 
   if (inCurWeek) {
     _ensureWeekSchedule(data);
@@ -1131,10 +1182,9 @@ function extraSave() {
   }
   save(data);
   closeModal('modal-extra');
-
-  if (isToday && inCurWeek && !data.currentShift) { startShift(); toast('대타 근무를 시작했어요'); return; }
+  showPage('shift');
   renderShift();
-  toast((isPast || !inCurWeek) ? '지난 대타 근무를 기록으로 추가했어요' : '대타 근무를 등록했어요');
+  toast((isPast || !inCurWeek) ? '지난 대타 근무를 기록으로 추가했어요' : '대타 근무를 스케줄에 등록했어요');
 }
 
 // ── 근무 기록 수정/삭제 ───────────────────────────────
@@ -1233,10 +1283,11 @@ function renderShift() {
 
   document.getElementById('active-shift').style.display = s ? 'block' : 'none';
   if (s) {
+    ensureShiftBlocks(s, data.templates);
     const startT = timeStr(s.startedAt);
     document.getElementById('shift-start-badge').textContent = startT ? `출근 ${startT}` : '';
     document.getElementById('shift-blocks').innerHTML = ['6','8','9'].map(k => {
-      const tmpl = data.templates[k], crit = k === '9';
+      const tmpl = data.templates[k] || DEFAULTS.templates[k], crit = k === '9';
       return `<div class="card">
         <div class="card-title ${crit?'red-title':''}">${tmpl.label} <span class="time-count" id="count-${k}"></span></div>
         <div class="time-prog"><div class="time-bar ${crit?'red':''}" id="bar-${k}" style="width:0%"></div></div>
@@ -1253,7 +1304,7 @@ function renderShift() {
     const n = data.shifts.length;
     document.getElementById('past-list').innerHTML = [...data.shifts].reverse().map((sh, di) => {
       const realIdx = n - 1 - di;
-      const all = Object.values(sh.tasks).flat();
+      const all = allTasks(sh);
       const done = all.filter(t=>t.status==='o').length;
       const handled = all.filter(t=>t.status).length;
       const total = all.length;
@@ -1276,8 +1327,11 @@ function renderShift() {
   }
 }
 
+function allTasks(shift) {
+  return Object.values((shift && shift.tasks) || {}).flat().filter(Boolean);
+}
 function updateStats(s) {
-  const all = Object.values(s.tasks).flat();
+  const all = allTasks(s);
   const done = all.filter(t=>t.status==='o').length;
   const handled = all.filter(t=>t.status).length;
   const total = all.length;
@@ -1288,6 +1342,7 @@ function updateStats(s) {
 }
 
 function renderBlock(k, tasks) {
+  tasks = Array.isArray(tasks) ? tasks.filter(Boolean) : [];
   const handled = tasks.filter(t=>t.status).length;
   const total = tasks.length;
   const bar = document.getElementById('bar-'+k);
@@ -1666,14 +1721,17 @@ function saveEmailSettings() {
 }
 
 // ── INIT ─────────────────────────────────────────────
+window.addEventListener('error', e => {
+  try { toast('오류: ' + (e.message || '알 수 없음')); } catch(_) {}
+});
 (function() {
-  save(load());
-  renderShift();
-  checkWeeklyEmail();
-  notifyCheck();
-  setInterval(notifyCheck, 20000);
+  try { save(load()); } catch(e) {}
+  try { renderShift(); } catch(e) { toast('화면 오류: ' + e.message); }
+  try { checkWeeklyEmail(); } catch(e) {}
+  try { notifyCheck(); } catch(e) {}
+  setInterval(() => { try { notifyCheck(); } catch(e) {} }, 20000);
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) { notifyCheck(); checkWeeklyEmail(); }
+    if (!document.hidden) { try { notifyCheck(); checkWeeklyEmail(); } catch(e) {} }
   });
 })();
 </script>
