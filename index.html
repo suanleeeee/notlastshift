@@ -1706,11 +1706,43 @@ function renderEmailSettings(data) {
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn-save-inline" onclick="saveEmailSettings()">설정 저장</button>
       <button class="btn-save-inline" onclick="sendBackupEmail(false)">지금 보내기</button>
-      <button class="btn-save-inline" onclick="downloadBackupFile()">파일로 저장</button>
     </div>
-    <div style="font-size:10px;color:var(--ink-muted);margin-top:12px">
+    <div style="font-size:10px;color:var(--ink-muted);margin:12px 0 4px;letter-spacing:.5px">
       ${v ? (isHook ? '웹훅 모드' : '이메일 모드') : '미설정'} · 마지막 자동 발송 주: ${s.lastEmailWeek || '없음'}
+    </div>
+    <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
+      <div style="font-size:12px;font-weight:500;margin-bottom:2px">기기 옮기기 · 복원</div>
+      <div class="modal-hint" style="margin-bottom:10px">
+        체크리스트 편집·근무 기록·설정을 통째로 저장하고, 다른 기기/새 주소에서 그대로 불러와요.
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-save-inline" onclick="downloadBackupFile()">파일로 저장</button>
+        <button class="btn-save-inline" onclick="document.getElementById('restore-file').click()">파일 불러오기</button>
+      </div>
+      <input type="file" id="restore-file" accept="application/json,.json" style="display:none" onchange="restoreBackup(event)">
     </div>`;
+}
+function restoreBackup(e) {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let obj;
+    try { obj = JSON.parse(reader.result); } catch(_) { toast('JSON 파일을 읽을 수 없어요'); return; }
+    if (!obj || typeof obj !== 'object' || !('templates' in obj || 'shifts' in obj || 'currentShift' in obj)) {
+      toast('마감체크리스트 백업 파일이 아니에요'); return;
+    }
+    const cur = load();
+    const hasData = (cur.shifts && cur.shifts.length) || cur.currentShift;
+    if (hasData && !confirm('이 기기의 지금 데이터를 백업 내용으로 덮어쓸까요? 되돌릴 수 없어요.')) return;
+    try { localStorage.setItem('closing-v1', JSON.stringify(obj)); }
+    catch(_) { toast('저장 공간 오류로 복원 실패'); return; }
+    save(load());                 // 마이그레이션·정규화 적용
+    toast('백업을 불러왔어요 ✅');
+    showPage('shift');
+  };
+  reader.readAsText(file);
 }
 function saveEmailSettings() {
   const d = load();
