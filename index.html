@@ -776,7 +776,7 @@ function load() {
     if (!d.weekSchedule.overrides) d.weekSchedule.overrides = {};
   }
 
-  delete d.manual;
+  // d.manual (구버전 메뉴얼 데이터) 는 UI에서 빠졌지만 지우지 않고 보존
   return d;
 }
 function save(d){ try{ localStorage.setItem('closing-v1', JSON.stringify(d)); }catch(e){} }
