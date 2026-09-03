@@ -675,7 +675,7 @@ const DEFAULTS = {
     notifiedFor: {}
   },
   templates: {
-    "6": { label:"입장 직후", tasks:[
+    "6": { label:"6시", tasks:[
       {id:1,  text:"칼봉투 채우기"},
       {id:2,  text:"포크비닐 채우기"},
       {id:3,  text:"배달용 음료랩 채우기"},
@@ -689,11 +689,11 @@ const DEFAULTS = {
       {id:11, text:"시재 점검"},
       {id:12, text:"대걸레 빨기"}
     ]},
-    "8": { label:"커피 마감", tasks:[
+    "8": { label:"8시 30분", tasks:[
       {id:1, text:"커피 마감하기"},
       {id:2, text:"조각 케이크 아래층에 모으기"}
     ]},
-    "9": { label:"퇴근 직전", tasks:[
+    "9": { label:"9시 퇴근 전", tasks:[
       {id:1,  text:"온수기 전원 끄기"},
       {id:2,  text:"그라인더 전원 끄기"},
       {id:3,  text:"쇼케이스 전원 끄기"},
@@ -743,10 +743,10 @@ function load() {
     if (!d.weekSchedule.overrides) d.weekSchedule.overrides = {};
   }
 
-  const oldLabels = { "6":"6시", "8":"8시 30분", "9":"9시 퇴근 전" };
+  const renamedLabels = { "6":"입장 직후", "8":"커피 마감", "9":"퇴근 직전" };
   ['6','8','9'].forEach(k => {
     if (!d.templates[k]) d.templates[k] = clone(DEFAULTS.templates[k]);
-    if (d.templates[k].label === oldLabels[k]) d.templates[k].label = DEFAULTS.templates[k].label;
+    if (d.templates[k].label === renamedLabels[k]) d.templates[k].label = DEFAULTS.templates[k].label;
   });
   delete d.manual;
   return d;
@@ -1294,7 +1294,6 @@ function renderBlock(k, tasks) {
       <div class="task-text">${t.text}</div>
       <div class="status-btns">
         <button class="sbtn sbtn-o ${t.status==='o'?'active':''}"    onclick="setStatus('${k}',${i},'o')">O</button>
-        <button class="sbtn sbtn-x ${t.status==='x'?'active':''}"    onclick="setStatus('${k}',${i},'x')">X</button>
         <button class="sbtn sbtn-s ${t.status==='skip'?'active':''}" onclick="setStatus('${k}',${i},'skip')">−</button>
       </div>
     </div>`;
