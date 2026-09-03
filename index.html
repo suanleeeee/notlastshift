@@ -501,6 +501,21 @@ input, select, button { font-size:16px; }
   </div>
 </div>
 
+<!-- 대타 · 예정 외 근무 모달 -->
+<div class="modal-overlay" id="modal-extra" onclick="closeModal('modal-extra')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-title">대타 · 예정 외 근무</div>
+    <div class="modal-field"><label>날짜</label><input type="date" id="ex-date"></div>
+    <div class="modal-field"><label>출근</label><input type="time" id="ex-start"></div>
+    <div class="modal-field"><label>퇴근</label><input type="time" id="ex-end"></div>
+    <div class="modal-hint">이번 주 근무로 등록돼요. 날짜가 오늘이면 바로 근무가 시작됩니다.</div>
+    <div class="modal-btns">
+      <button class="modal-btn-cancel" onclick="closeModal('modal-extra')">취소</button>
+      <button class="modal-btn-ok"     onclick="extraSave()">등록</button>
+    </div>
+  </div>
+</div>
+
 <!-- 근무 취소 모달 -->
 <div class="modal-overlay" id="modal-cancel" onclick="closeModal('modal-cancel')">
   <div class="modal-box" onclick="event.stopPropagation()">
@@ -696,6 +711,7 @@ const DEFAULTS = {
 
 const DAYS_KO = ['일','월','화','수','목','금','토'];
 const DOW_ORDER = [1,2,3,4,5,6,0];               // 월~일
+const WORK_DOWS = [3,4,5,6,0];                    // 수·목·금·토·일 (월·화 정기 휴무)
 function pad(n){ return String(n).padStart(2,'0'); }
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
 function has(o,k){ return Object.prototype.hasOwnProperty.call(o,k); }
@@ -713,6 +729,7 @@ function load() {
   d.settings = Object.assign(clone(DEFAULTS.settings), raw.settings || {});
   if (!d.settings.notifiedFor) d.settings.notifiedFor = {};
   if (!d.settings.fixedDays)   d.settings.fixedDays = {};
+  ['1','2'].forEach(k => delete d.settings.fixedDays[k]);   // 월·화 정기 휴무
   if (!d.settings.wage)        d.settings.wage = 11000;
   delete d.settings.web3key;
 
@@ -774,8 +791,9 @@ function effectiveSchedule(refDate) {
   const days   = {};
   weekDays(wk.monday).forEach(d => {
     const iso = isoOf(d), dow = String(d.getDay());
-    if (has(ov, iso)) { if (ov[iso]) days[iso] = ov[iso]; }
-    else if (fixed[dow]) days[iso] = fixed[dow];
+    if (has(ov, iso)) { if (ov[iso]) days[iso] = ov[iso]; return; }   // 개별 등록(대타 포함) 우선
+    if (!WORK_DOWS.includes(d.getDay())) return;                       // 월·화는 고정 근무일 미적용
+    if (fixed[dow]) days[iso] = fixed[dow];
   });
   return { weekKey: wk.key, monday: wk.monday, sunday: wk.sunday, days, overrides: ov };
 }
@@ -1067,6 +1085,51 @@ function dayTimeReset() {
   closeModal('modal-day-time'); toast('고정 근무일 시간으로 되돌렸어요'); renderShift();
 }
 
+// ── 대타 · 예정 외 근무 ───────────────────────────────
+function openExtra() {
+  const data = load();
+  const wk = isoWeekInfo(new Date());
+  const t = guessPrevTimes(data);
+  const el = document.getElementById('ex-date');
+  el.value = todayISO();
+  el.removeAttribute('min');
+  el.max = isoOf(wk.sunday);
+  document.getElementById('ex-start').value = t.start;
+  document.getElementById('ex-end').value   = t.end;
+  openModal('modal-extra');
+}
+function extraSave() {
+  const date  = document.getElementById('ex-date').value;
+  const start = document.getElementById('ex-start').value;
+  const end   = document.getElementById('ex-end').value;
+  if (!date || !start || !end) { toast('날짜와 시간을 모두 입력하세요'); return; }
+
+  const data = load();
+  const inCurWeek = isoWeekInfo(new Date(date + 'T12:00:00')).key === isoWeekInfo(new Date()).key;
+  const isToday = date === todayISO();
+  const isPast  = date < todayISO();
+
+  if (inCurWeek) {
+    _ensureWeekSchedule(data);
+    data.weekSchedule.overrides[date] = { start, end };
+    if (data.settings.notifiedFor) delete data.settings.notifiedFor[date];
+  }
+  if (isPast || !inCurWeek) {          // 이미 지난 대타 → 완료 기록으로 추가 (급여 반영)
+    const s = new Date(date + 'T' + start + ':00');
+    const e = new Date(date + 'T' + end + ':00');
+    const shift = { id: Date.now(), date, startedAt: s.toISOString(), endedAt: e.toISOString(),
+                    planned: { start, end }, perfect: false, tasks: {} };
+    ['6','8','9'].forEach(k => { shift.tasks[k] = data.templates[k].tasks.map(t => ({...t, status:null})); });
+    data.shifts.push(shift);
+  }
+  save(data);
+  closeModal('modal-extra');
+
+  if (isToday && inCurWeek && !data.currentShift) { startShift(); toast('대타 근무를 시작했어요'); return; }
+  renderShift();
+  toast((isPast || !inCurWeek) ? '지난 대타 근무를 기록으로 추가했어요' : '대타 근무를 등록했어요');
+}
+
 // ── 근무 기록 수정/삭제 ───────────────────────────────
 let _editPastIdx = null;
 function editPastShift(idx) {
@@ -1120,7 +1183,7 @@ function renderShift() {
   const s = data.currentShift;
   const today = todayISO();
   const eff = effectiveSchedule(new Date());
-  const days = weekDays(eff.monday);
+  const days = weekDays(eff.monday).filter(d => WORK_DOWS.includes(d.getDay()) || has(eff.overrides, isoOf(d)));
   const targetH = weekTargetHours(eff);
 
   document.getElementById('week-sub').textContent =
@@ -1155,9 +1218,10 @@ function renderShift() {
     const hint = targetH > 0
       ? '근무일을 두 번 탭하면 이번 주 시간만 수정할 수 있어요'
       : '편집 탭에서 고정 근무일을 먼저 설정해두면 편해요';
+    const extraLink = `<button class="lnk" style="display:block;margin:9px auto 0" onclick="openExtra()">+ 대타 · 예정 외 근무</button>`;
     foot.innerHTML = doneToday
-      ? `<div class="week-foot-hint">오늘 마감 완료 · 다시 시작하려면 아래 버튼</div><button class="btn-start" onclick="startShift()">근무 다시 시작</button>`
-      : `<button class="btn-start" onclick="startShift()">근무 시작</button><div class="week-foot-hint">${hint}</div>`;
+      ? `<div class="week-foot-hint">오늘 마감 완료 · 다시 시작하려면 아래 버튼</div><button class="btn-start" onclick="startShift()">근무 다시 시작</button>${extraLink}`
+      : `<button class="btn-start" onclick="startShift()">근무 시작</button><div class="week-foot-hint">${hint}</div>${extraLink}`;
   }
 
   document.getElementById('active-shift').style.display = s ? 'block' : 'none';
@@ -1393,7 +1457,7 @@ function guessPrevTimes(data) {
 function renderFixedDays(data) {
   const fx = data.settings.fixedDays || {};
   const prev = guessPrevTimes(data);
-  const rows = DOW_ORDER.map(dow => {
+  const rows = WORK_DOWS.map(dow => {
     const cur = fx[dow];
     const on = !!cur;
     const st = (cur && cur.start) || prev.start;
@@ -1416,7 +1480,7 @@ function renderFixedDays(data) {
 
   document.getElementById('fixed-sub').textContent = wkH > 0 ? `주 ${trimH(wkH)}시간` : '고정 근무일';
   document.getElementById('edit-fixed').innerHTML = `
-    <div class="sch-week">매주 반복되는 근무 요일 · 시간</div>
+    <div class="sch-week">매주 반복되는 근무 요일 · 시간 (월·화 정기 휴무)</div>
     ${rows}
     <div class="sch-actions"><button class="btn-add-row" onclick="saveFixedDays()">고정 근무일 저장</button></div>
     <div class="sch-sub">
