@@ -504,7 +504,7 @@ input, select, button { font-size:16px; }
 <!-- 대타 · 예정 외 근무 모달 -->
 <div class="modal-overlay" id="modal-extra" onclick="closeModal('modal-extra')">
   <div class="modal-box" onclick="event.stopPropagation()">
-    <div class="modal-title">대타 · 예정 외 근무</div>
+    <div class="modal-title">대타 출동이요</div>
     <div class="modal-field"><label>날짜</label><input type="date" id="ex-date"></div>
     <div class="modal-field"><label>출근</label><input type="time" id="ex-start"></div>
     <div class="modal-field"><label>퇴근</label><input type="time" id="ex-end"></div>
@@ -1218,7 +1218,7 @@ function renderShift() {
     const hint = targetH > 0
       ? '근무일을 두 번 탭하면 이번 주 시간만 수정할 수 있어요'
       : '편집 탭에서 고정 근무일을 먼저 설정해두면 편해요';
-    const extraLink = `<button class="lnk" style="display:block;margin:9px auto 0" onclick="openExtra()">+ 대타 · 예정 외 근무</button>`;
+    const extraLink = `<button class="lnk" style="display:block;margin:9px auto 0" onclick="openExtra()">+ 대타 출동이요</button>`;
     foot.innerHTML = doneToday
       ? `<div class="week-foot-hint">오늘 마감 완료 · 다시 시작하려면 아래 버튼</div><button class="btn-start" onclick="startShift()">근무 다시 시작</button>${extraLink}`
       : `<button class="btn-start" onclick="startShift()">근무 시작</button><div class="week-foot-hint">${hint}</div>${extraLink}`;
