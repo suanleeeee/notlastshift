@@ -98,6 +98,7 @@ main {
 .stat-num { font-family:'Bebas Neue',sans-serif; font-size:32px; color:var(--blue); line-height:1; }
 .stat-num.red   { color:var(--red); }
 .stat-num.green { color:var(--green); }
+.stat-num.sm    { font-size:24px; }
 .stat-sub { font-size:10px; color:var(--ink-sub); margin-top:3px; }
 
 /* ── 출근 시간 + 취소 버튼 행 ── */
@@ -186,6 +187,20 @@ main {
 }
 @keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
 
+/* ── 오늘 근무일 배너 ── */
+.today-banner {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  background:var(--blue-pale); border:1px solid var(--border-blue);
+  padding:12px 16px; animation:fadeIn .2s ease;
+}
+.today-banner .tb-text { font-size:13px; color:var(--blue); font-weight:500; }
+.today-banner button {
+  background:var(--blue); border:none; color:white; flex-shrink:0;
+  font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:2px;
+  padding:9px 16px; cursor:pointer; -webkit-tap-highlight-color:transparent;
+}
+.today-banner button:active { opacity:.85; }
+
 /* ── PAST SHIFTS ── */
 .divider-label {
   font-family:'Bebas Neue',sans-serif;
@@ -206,35 +221,18 @@ main {
 .badge-done    { background:rgba(29,111,66,.08); color:var(--green); }
 .badge-partial { background:var(--blue-pale); color:var(--blue); }
 
-/* ── TABS ── */
+/* ── STATS PAGE ── */
+.stats-grid { display:grid; grid-template-columns:repeat(3,1fr); background:var(--bg-card); border:1px solid var(--border); border-bottom:none; }
+.stats-grid:last-of-type { border-bottom:1px solid var(--border); }
+.notify-row {
+  padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.notify-row .nr-name { font-size:13px; font-weight:500; }
+.notify-row .nr-desc { font-size:11px; color:var(--ink-muted); margin-top:2px; line-height:1.5; }
+
+/* ── TABS (edit checklist blocks) ── */
 .task-tabs { display:flex; border-bottom:1px solid var(--border); overflow-x:auto; scrollbar-width:none; }
 .task-tabs::-webkit-scrollbar { display:none; }
-.task-tab {
-  flex:0 0 auto; padding:10px 20px; text-align:center;
-  font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:3px;
-  color:var(--ink-muted); cursor:pointer;
-  border-bottom:2px solid transparent; border-top:none; border-left:none; border-right:none;
-  background:none; transition:all .15s; white-space:nowrap;
-  -webkit-tap-highlight-color:transparent;
-}
-.task-tab:hover { color:var(--blue); }
-.task-tab.active { color:var(--blue); border-bottom:2px solid var(--blue); }
-
-/* ── MANUAL CONTENT ── */
-.manual-pane { display:none; }
-.manual-pane.active { display:block; }
-.m-item { padding:14px 16px; border-bottom:1px solid var(--border); animation:fadeIn .2s ease; }
-.m-item:last-child { border-bottom:none; }
-.m-item-name { font-weight:600; font-size:14px; margin-bottom:4px; }
-.m-item-desc { font-size:12px; color:var(--ink-sub); line-height:1.75; }
-.m-item-img {
-  width:100%; height:180px;
-  background:var(--bg); border:1px dashed var(--border);
-  display:flex; align-items:center; justify-content:center;
-  color:var(--ink-muted); font-size:11px; letter-spacing:1px;
-  margin-top:10px; overflow:hidden;
-}
-.m-item-img img { width:100%; height:100%; object-fit:cover; }
 
 /* ── EDIT ── */
 .input-row { display:flex; flex-wrap:wrap; border-bottom:1px solid var(--border); }
@@ -270,17 +268,14 @@ main {
   background:transparent; color:var(--ink); outline:none; transition:border-color .15s;
 }
 .edit-input:focus { border-color:var(--border-blue); }
-textarea.edit-input { resize:vertical; font-size:15px; }
 
 .btn-save-inline {
   background:none; border:1px solid var(--border-blue); color:var(--blue);
-  padding:5px 10px; font-family:'Bebas Neue',sans-serif;
+  padding:7px 12px; font-family:'Bebas Neue',sans-serif;
   font-size:12px; letter-spacing:2px; cursor:pointer; transition:background .15s; flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
 }
-.btn-save-inline:hover { background:var(--blue-pale); }
-
-.cat-hd { padding:10px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
-.cat-hd-name { font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:2px; color:var(--ink-sub); flex:1; }
+.btn-save-inline:active { background:var(--blue-pale); }
 
 .empty-state { padding:32px 16px; text-align:center; font-size:11px; color:var(--ink-muted); letter-spacing:1px; }
 
@@ -292,6 +287,24 @@ textarea.edit-input { resize:vertical; font-size:15px; }
   transition:opacity .2s; -webkit-tap-highlight-color:transparent;
 }
 .btn-start:active { opacity:.85; }
+
+/* ── WEEK SCHEDULE FORM ── */
+.sch-week { font-family:'Bebas Neue',sans-serif; letter-spacing:2px; font-size:12px; color:var(--ink-muted); padding:2px 2px 10px; }
+.sch-row { padding:10px 2px; border-bottom:1px solid var(--border); }
+.sch-row:last-of-type { border-bottom:none; }
+.sch-head label { display:flex; align-items:center; gap:9px; font-size:14px; color:var(--ink-sub); cursor:pointer; }
+.sch-head input[type=checkbox] { width:19px; height:19px; flex-shrink:0; accent-color:var(--blue); }
+.sch-row.on .sch-head label { color:var(--ink); font-weight:500; }
+.sch-times { display:none; gap:8px; align-items:center; margin-top:9px; padding-left:28px; }
+.sch-row.on .sch-times { display:flex; }
+.sch-times input[type=time] {
+  flex:1; border:1px solid var(--border); padding:8px 6px;
+  background:transparent; color:var(--ink); font-family:'Noto Sans KR',sans-serif; outline:none; min-width:0;
+}
+.sch-times input[type=time]:focus { border-color:var(--border-blue); }
+.sch-times span { color:var(--ink-muted); }
+.sch-actions { padding-top:14px; }
+.sch-sub { display:flex; gap:8px; flex-wrap:wrap; padding-top:10px; }
 
 /* ── MODAL ── */
 .modal-overlay {
@@ -315,8 +328,7 @@ textarea.edit-input { resize:vertical; font-size:15px; }
   background:transparent; color:var(--ink); outline:none;
 }
 .modal-field input:focus, .modal-field textarea:focus { border-color:var(--border-blue); }
-.modal-field textarea { resize:vertical; font-size:15px; }
-.modal-hint { font-size:10px; color:var(--ink-muted); margin-top:4px; letter-spacing:1px; }
+.modal-hint { font-size:10px; color:var(--ink-muted); margin-top:4px; letter-spacing:1px; line-height:1.6; }
 .modal-btns { display:flex; gap:8px; margin-top:16px; }
 .modal-btns button { flex:1; padding:10px; font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:2px; cursor:pointer; border:none; }
 .modal-btn-ok     { background:var(--blue); color:white; }
@@ -345,6 +357,16 @@ textarea.edit-input { resize:vertical; font-size:15px; }
 
 * { -webkit-tap-highlight-color:transparent; }
 input, select, button { font-size:16px; }
+
+/* ── TOAST ── */
+#toast {
+  position:fixed; left:50%; bottom:84px;
+  transform:translateX(-50%) translateY(16px);
+  background:var(--ink); color:white; font-size:12px; letter-spacing:.5px;
+  padding:11px 18px; max-width:82%; text-align:center; line-height:1.5;
+  opacity:0; pointer-events:none; transition:all .25s; z-index:600;
+}
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
 /* ── 수훈 알바 축하 화면 ── */
 #cheer-overlay {
@@ -472,38 +494,14 @@ input, select, button { font-size:16px; }
   </div>
 </div>
 
-<!-- 메뉴얼 아이템 모달 -->
-<div class="modal-overlay" id="modal-item" onclick="closeModal('modal-item')">
-  <div class="modal-box" onclick="event.stopPropagation()">
-    <div class="modal-title" id="item-modal-title">항목 추가</div>
-    <div class="modal-field">
-      <label>이름 *</label>
-      <input type="text" id="item-name" placeholder="예: 초코 가나슈">
-    </div>
-    <div class="modal-field">
-      <label>설명</label>
-      <textarea id="item-desc" placeholder="맛, 특징, 주의사항 등..." rows="3" style="width:100%;border:1px solid var(--border);padding:10px;font-family:'Noto Sans KR',sans-serif;font-size:15px;background:transparent;color:var(--ink);outline:none;resize:vertical;"></textarea>
-    </div>
-    <div class="modal-field">
-      <label>이미지 경로 (선택)</label>
-      <input type="text" id="item-img" placeholder="C:\nuas\사진\케이크.jpg">
-      <div class="modal-hint">저장된 이미지 파일 경로를 입력하세요</div>
-    </div>
-    <div class="modal-btns">
-      <button class="modal-btn-cancel" onclick="closeModal('modal-item')">취소</button>
-      <button class="modal-btn-ok"     onclick="saveItem()">저장</button>
-    </div>
-  </div>
-</div>
-
 <!-- 수훈 알바 축하 화면 -->
 <div id="cheer-overlay">
   <div class="cheer-inner">
     <div class="cheer-badge">TODAY'S MVP</div>
     <div class="cheer-emoji">⚾</div>
-    <div class="cheer-supertitle">오늘의 수훈 알바는</div>
+    <div class="cheer-supertitle">오늘의 수훈 알바</div>
     <div class="cheer-name">바로 너!</div>
-    <div class="cheer-sub-title">PERFECT CLOSING · 완봉 마감 달성</div>
+    <div class="cheer-sub-title">PERFECT CLOSING · 완봉 마감</div>
     <div class="cheer-record">
       <div class="cheer-record-item">
         <span class="cheer-record-label">출근</span>
@@ -516,14 +514,14 @@ input, select, button { font-size:16px; }
       </div>
     </div>
     <div class="cheer-copy">
-      5시 정각 집결, 9시 20분 이내 완전 마감.<br>
-      단 한 개의 실점도, 단 한 개의 볼넷도 없었어.<br>
-      <strong style="color:white">오늘 마감은 완봉승이야.</strong>
+      빠뜨린 체크 하나 없이, 실점 없이 틀어막았어.<br>
+      제 시간에 나와서 문 닫는 순간까지 완벽.<br>
+      <strong style="color:white">오늘 마감, 9회말 마무리 등판 세이브 성공.</strong>
     </div>
     <div class="cheer-lions">
-      삼성라이온즈 스카우터가 지금 이 케이크가게를 봤다면<br>
-      오늘 당장 1군 콜업 통보가 날아왔을 텐데. 🦁<br>
-      <span style="letter-spacing:3px">우리가 삼성 — 근데 오늘은 네 가게</span>
+      삼성 라이온즈 스카우터가 오늘 이 마감을 봤다면<br>
+      내일 아침 1군 콜업 전화가 왔을 거야. 🦁<br>
+      <span style="letter-spacing:3px">가끔은 이렇게 완벽한 날도 있어야지 — 수고했어</span>
     </div>
     <button class="cheer-btn" onclick="closeCheer()">퇴근하기 🏠</button>
   </div>
@@ -552,10 +550,20 @@ input, select, button { font-size:16px; }
       </div>
     </div>
 
+    <!-- 이번 주 근무 등록 -->
+    <div id="sch-register" style="display:none">
+      <div class="card">
+        <div class="card-title">THIS WEEK <span class="sub" id="sch-reg-sub">이번 주 근무 등록</span></div>
+        <div id="sch-register-form" style="padding:10px 14px 16px"></div>
+      </div>
+    </div>
+
+    <!-- 오늘 근무일 배너 -->
+    <div id="today-banner" class="today-banner" style="display:none"></div>
+
     <!-- 근무 중 -->
     <div id="active-shift" style="display:none">
 
-      <!-- 출근 시간 + 취소 버튼 -->
       <div class="shift-meta-row">
         <button class="btn-cancel-shift" onclick="openModal('modal-cancel')">← 잘못 눌렀어요</button>
         <span class="shift-start-badge" id="shift-start-badge" onclick="editStartTime()"></span>
@@ -579,25 +587,8 @@ input, select, button { font-size:16px; }
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-title">6:00 <span class="time-count" id="count-6"></span></div>
-        <div class="time-prog"><div class="time-bar" id="bar-6" style="width:0%"></div></div>
-        <div class="task-list" id="list-6"></div>
-      </div>
+      <div id="shift-blocks"></div>
 
-      <div class="card">
-        <div class="card-title">8:30 <span class="time-count" id="count-8"></span></div>
-        <div class="time-prog"><div class="time-bar" id="bar-8" style="width:0%"></div></div>
-        <div class="task-list" id="list-8"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title red-title">9:00 <span class="time-count" id="count-9"></span></div>
-        <div class="time-prog"><div class="time-bar red" id="bar-9" style="width:0%"></div></div>
-        <div class="task-list" id="list-9"></div>
-      </div>
-
-      <!-- 근무 종료 버튼 (빨간 풀너비) -->
       <button class="btn-end-big" onclick="openModal('modal-end')">근무 종료</button>
 
       <div id="all-done" class="done-banner" style="display:none">
@@ -612,32 +603,28 @@ input, select, button { font-size:16px; }
     </div>
   </div>
 
-  <!-- ── 근무 메뉴얼 ── -->
-  <div id="page-manual" class="page">
+  <!-- ── 통계 ── -->
+  <div id="page-stats" class="page">
     <div class="card">
-      <div class="card-title">MANUAL <span class="sub">근무 메뉴얼</span></div>
-      <div class="task-tabs" id="manual-tabs"></div>
-      <div id="manual-contents"></div>
-      <div id="manual-empty" class="empty-state" style="display:none">NO CONTENT · 편집 탭에서 항목을 추가해보세요</div>
+      <div class="card-title">ALERT <span class="sub">근무 시작 알림</span></div>
+      <div id="notify-box"></div>
     </div>
+    <div id="stats-body"></div>
   </div>
 
   <!-- ── 편집 ── -->
   <div id="page-edit" class="page">
     <div class="card">
+      <div class="card-title">THIS WEEK <span class="sub">이번 주 근무</span></div>
+      <div id="edit-schedule" style="padding:10px 14px 16px"></div>
+    </div>
+    <div class="card">
       <div class="card-title">CHECKLIST <span class="sub">체크리스트 편집</span></div>
       <div id="edit-tasks"></div>
     </div>
     <div class="card">
-      <div class="card-title">MANUAL <span class="sub">메뉴얼 편집</span></div>
-      <div id="edit-manual"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">BACKUP <span class="sub">데이터 백업</span></div>
-      <div style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
-        <span style="font-size:12px;color:var(--ink-sub)">매주 수요일 자동 백업 · 수동으로도 저장 가능해요</span>
-        <button class="btn-save-inline" style="white-space:nowrap" onclick="downloadBackup()">지금 저장</button>
-      </div>
+      <div class="card-title">EMAIL BACKUP <span class="sub">이메일 백업</span></div>
+      <div id="edit-email" style="padding:14px 16px"></div>
     </div>
   </div>
 
@@ -648,9 +635,9 @@ input, select, button { font-size:16px; }
     <span class="nav-icon">☑</span>
     체크리스트
   </button>
-  <button class="nav-btn" id="nav-manual" onclick="showPage('manual')">
-    <span class="nav-icon">📖</span>
-    메뉴얼
+  <button class="nav-btn" id="nav-stats" onclick="showPage('stats')">
+    <span class="nav-icon">📊</span>
+    통계
   </button>
   <button class="nav-btn" id="nav-edit" onclick="showPage('edit')">
     <span class="nav-icon">✏</span>
@@ -658,13 +645,23 @@ input, select, button { font-size:16px; }
   </button>
 </nav>
 
+<div id="toast"></div>
+
 <script>
 // ── DATA ──────────────────────────────────────────────
 const DEFAULTS = {
   currentShift: null,
   shifts: [],
+  weekSchedule: null,          // { weekKey:"2026-W36", days:{ "2026-09-07":{start:"17:00",end:"21:00"} } }
+  settings: {
+    email: "",
+    web3key: "",
+    notify: false,
+    lastEmailWeek: null,
+    notifiedFor: {}            // { "2026-09-07": {pre:true, start:true} }
+  },
   templates: {
-    "6": { label:"6시", tasks:[
+    "6": { label:"입장 직후", tasks:[
       {id:1,  text:"칼봉투 채우기"},
       {id:2,  text:"포크비닐 채우기"},
       {id:3,  text:"배달용 음료랩 채우기"},
@@ -678,11 +675,11 @@ const DEFAULTS = {
       {id:11, text:"시재 점검"},
       {id:12, text:"대걸레 빨기"}
     ]},
-    "8": { label:"8시 30분", tasks:[
+    "8": { label:"커피 마감", tasks:[
       {id:1, text:"커피 마감하기"},
       {id:2, text:"조각 케이크 아래층에 모으기"}
     ]},
-    "9": { label:"9시 퇴근 전", tasks:[
+    "9": { label:"퇴근 직전", tasks:[
       {id:1,  text:"온수기 전원 끄기"},
       {id:2,  text:"그라인더 전원 끄기"},
       {id:3,  text:"쇼케이스 전원 끄기"},
@@ -695,19 +692,14 @@ const DEFAULTS = {
       {id:10, text:"하수구 뚜껑 닫기 (홀)"},
       {id:11, text:"하수구 뚜껑 닫기 (주방)"}
     ]}
-  },
-  manual: { categories:[
-    {id:"cake",      name:"케이크 맛",   items:[]},
-    {id:"cookie",    name:"쿠키 종류",   items:[]},
-    {id:"packaging", name:"케이크 포장", items:[]},
-    {id:"drink",     name:"음료 제작",   items:[]}
-  ]}
+  }
 };
 
 const DAYS_KO = ['일','월','화','수','목','금','토'];
 function pad(n){ return String(n).padStart(2,'0'); }
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
 
-// ── 마이그레이션 (checked → status) ──────────────────
+// ── 마이그레이션 ──────────────────────────────────────
 function migrateTask(t) {
   if (!('status' in t)) { t.status = t.checked ? 'o' : null; delete t.checked; }
   return t;
@@ -718,15 +710,29 @@ function migrateShift(s) {
 }
 
 function load() {
-  try {
-    const raw = JSON.parse(localStorage.getItem('closing-v1'));
-    if (!raw) return JSON.parse(JSON.stringify(DEFAULTS));
-    if (raw.currentShift) raw.currentShift = migrateShift(raw.currentShift);
-    if (raw.shifts) raw.shifts = raw.shifts.map(migrateShift);
-    return raw;
-  } catch(e) { return JSON.parse(JSON.stringify(DEFAULTS)); }
+  let raw;
+  try { raw = JSON.parse(localStorage.getItem('closing-v1')); } catch(e) { raw = null; }
+  if (!raw) return clone(DEFAULTS);
+
+  const d = Object.assign(clone(DEFAULTS), raw);
+  d.settings = Object.assign(clone(DEFAULTS.settings), raw.settings || {});
+  if (!d.settings.notifiedFor) d.settings.notifiedFor = {};
+  if (raw.currentShift) d.currentShift = migrateShift(raw.currentShift);
+  if (raw.shifts) d.shifts = raw.shifts.map(migrateShift);
+
+  const oldLabels = { "6":"6시", "8":"8시 30분", "9":"9시 퇴근 전" };
+  ['6','8','9'].forEach(k => {
+    if (!d.templates[k]) d.templates[k] = clone(DEFAULTS.templates[k]);
+    if (d.templates[k].label === oldLabels[k]) d.templates[k].label = DEFAULTS.templates[k].label;
+  });
+  delete d.manual;
+  return d;
 }
 function save(d) { try{ localStorage.setItem('closing-v1', JSON.stringify(d)); }catch(e){} }
+
+// ── DATE HELPERS ──────────────────────────────────────
+function isoOf(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function todayISO(){ return isoOf(new Date()); }
 
 function dateStr(iso) {
   const d = new Date(iso + 'T12:00:00');
@@ -737,10 +743,36 @@ function timeStr(iso) {
   const d = new Date(iso);
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
-function pathToUrl(p) {
-  if (!p) return null;
-  if (p.startsWith('http') || p.startsWith('file:')) return p;
-  return 'file:///' + p.replace(/\\/g, '/');
+
+// 월요일 기준 주 정보
+function isoWeekInfo(ref) {
+  const date = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate());
+  const dow = (date.getDay() + 6) % 7;           // 0=월 .. 6=일
+  const monday = new Date(date); monday.setDate(date.getDate() - dow);
+  const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+  const thu = new Date(monday); thu.setDate(monday.getDate() + 3);
+  const yearStart = new Date(thu.getFullYear(), 0, 1);
+  const weekNo = Math.ceil((((thu - yearStart) / 86400000) + 1) / 7);
+  return { key:`${thu.getFullYear()}-W${pad(weekNo)}`, monday, sunday };
+}
+function weekDays(monday) {
+  return Array.from({length:7}, (_,i) => { const d = new Date(monday); d.setDate(monday.getDate()+i); return d; });
+}
+
+// ── TOAST / DOWNLOAD ──────────────────────────────────
+let _toastT;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => t.classList.remove('show'), 2800);
+}
+function downloadBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
 }
 
 // ── CLOCK ─────────────────────────────────────────────
@@ -753,38 +785,181 @@ function tick() {
 }
 setInterval(tick, 1000); tick();
 
-// ── 매주 수요일 자동 백업 ─────────────────────────────
-function getWeekKey() {
-  const d = new Date(), jan1 = new Date(d.getFullYear(), 0, 1);
-  return `${d.getFullYear()}-W${String(Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7)).padStart(2,'0')}`;
-}
-function downloadBackup() {
-  const blob = new Blob([JSON.stringify(load(), null, 2)], {type:'application/json'});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  const now  = new Date();
-  a.href = url;
-  a.download = `마감체크리스트_백업_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}.json`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-function checkWeeklyBackup() {
+// ── 이메일 백업 (매주 월요일 / 수동) ──────────────────
+function backupJSON() { return JSON.stringify(load(), null, 2); }
+
+function downloadBackupFile() {
   const now = new Date();
-  if (now.getDay() !== 3) return;
-  const key = 'backup-' + getWeekKey();
-  if (localStorage.getItem(key)) return;
-  localStorage.setItem(key, '1');
-  setTimeout(downloadBackup, 1500);
+  downloadBlob(new Blob([backupJSON()], {type:'application/json'}),
+    `마감체크리스트_백업_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}.json`);
+}
+
+async function sendBackupEmail(silent) {
+  const data  = load();
+  const key   = (data.settings.web3key || '').trim();
+  const email = (data.settings.email || '').trim();
+  if (!key || !email) {
+    if (!silent) toast('편집 탭에서 이메일과 액세스 키를 먼저 설정하세요');
+    return false;
+  }
+  const now = new Date();
+  const label = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())}`;
+  if (!silent) toast('전송 중...');
+  try {
+    const res = await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+      body: JSON.stringify({
+        access_key: key,
+        subject: `[마감체크리스트] 백업 ${label}`,
+        from_name: '마감체크리스트',
+        email: email,
+        message: backupJSON()
+      })
+    });
+    const j = await res.json();
+    if (j.success) { if (!silent) toast('이메일로 백업을 보냈어요 ✉️'); return true; }
+    if (!silent) toast('전송 실패: ' + (j.message || '키를 확인하세요'));
+    return false;
+  } catch(e) {
+    if (!silent) toast('전송 실패 (네트워크 오류)');
+    return false;
+  }
+}
+
+function checkWeeklyEmail() {
+  const now = new Date();
+  if (now.getDay() !== 1) return;                 // 월요일만
+  const data = load();
+  if (!data.settings.web3key || !data.settings.email) return;
+  const wk = isoWeekInfo(now).key;
+  if (data.settings.lastEmailWeek === wk) return;
+  sendBackupEmail(true).then(ok => {
+    if (ok) { const d = load(); d.settings.lastEmailWeek = wk; save(d); renderEmailSettings(load()); }
+  });
+}
+
+// ── 알림 ──────────────────────────────────────────────
+function notifySupported(){ return ('Notification' in window); }
+function notifyGranted(){ return notifySupported() && Notification.permission === 'granted'; }
+
+function enableNotify() {
+  if (!notifySupported()) { toast('이 브라우저는 알림을 지원하지 않아요'); return; }
+  Notification.requestPermission().then(p => {
+    const d = load(); d.settings.notify = (p === 'granted'); save(d);
+    renderNotifyBox();
+    if (p === 'granted') {
+      try { new Notification('알림이 켜졌어요', { body:'근무 5분 전과 시작 시각에 알려줄게요' }); } catch(e){}
+      toast('알림을 켰어요');
+    } else {
+      toast('브라우저에서 알림이 차단됐어요');
+    }
+  });
+}
+function disableNotify() {
+  const d = load(); d.settings.notify = false; save(d);
+  renderNotifyBox(); toast('알림을 껐어요');
+}
+
+function fireNotify(title, body, tag) {
+  try { new Notification(title, { body, tag }); } catch(e) {}
+}
+
+function notifyCheck() {
+  const data = load();
+  if (!data.settings.notify || !notifyGranted()) return;
+  const today = todayISO();
+  const sched = (data.weekSchedule && data.weekSchedule.days) ? data.weekSchedule.days[today] : null;
+  if (!sched) return;
+  if (data.currentShift) return;                          // 이미 시작함
+  if (data.shifts.some(s => s.date === today)) return;    // 오늘 이미 마감함
+
+  const now = new Date();
+  const [h, m] = sched.start.split(':').map(Number);
+  const base = new Date(); base.setHours(h, m, 0, 0);
+  const diff = (base - now) / 60000;                      // 시작까지 남은 분
+
+  const nf = data.settings.notifiedFor[today] || {};
+  let changed = false;
+
+  if (diff <= 5 && diff > 0.5 && !nf.pre) {
+    fireNotify('곧 근무 시작', '5분 뒤 근무 시작이에요. 준비됐나요?', 'shift-pre');
+    nf.pre = true; changed = true;
+  }
+  if (diff <= 0.5 && diff > -30 && !nf.start) {
+    fireNotify('근무 시작 시각', '앱에서 "근무 시작" 버튼 누르는 거 잊지 마세요!', 'shift-start');
+    nf.start = true; changed = true;
+  }
+  if (changed) {
+    data.settings.notifiedFor = { [today]: nf };          // 오늘 것만 유지
+    save(data);
+  }
+}
+
+// ── .ics 캘린더 ───────────────────────────────────────
+function downloadICS() {
+  const data = load();
+  if (!data.weekSchedule || !data.weekSchedule.days || !Object.keys(data.weekSchedule.days).length) {
+    toast('먼저 이번 주 근무를 저장하세요'); return;
+  }
+  const dtstamp = new Date().toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
+  let ev = '';
+  Object.entries(data.weekSchedule.days).forEach(([iso, t]) => {
+    const ymd = iso.replace(/-/g,'');
+    const [sh, sm] = t.start.split(':');
+    const [eh, em] = t.end.split(':');
+    ev +=
+      'BEGIN:VEVENT\r\n' +
+      `UID:closing-${iso}@checklist\r\n` +
+      `DTSTAMP:${dtstamp}\r\n` +
+      `DTSTART:${ymd}T${sh}${sm}00\r\n` +
+      `DTEND:${ymd}T${eh}${em}00\r\n` +
+      'SUMMARY:매장 마감 근무\r\n' +
+      'BEGIN:VALARM\r\nTRIGGER:-PT5M\r\nACTION:DISPLAY\r\nDESCRIPTION:5분 뒤 근무 시작\r\nEND:VALARM\r\n' +
+      'BEGIN:VALARM\r\nTRIGGER:PT0M\r\nACTION:DISPLAY\r\nDESCRIPTION:근무 시작 - 앱에서 근무 시작 누르기\r\nEND:VALARM\r\n' +
+      'END:VEVENT\r\n';
+  });
+  const ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//closing-checklist//KR\r\nCALSCALE:GREGORIAN\r\n' + ev + 'END:VCALENDAR';
+  downloadBlob(new Blob([ics], {type:'text/calendar'}), `근무일정_${data.weekSchedule.weekKey}.ics`);
+  toast('캘린더 파일을 내려받았어요');
 }
 
 // ── 수훈 알바 축하 ────────────────────────────────────
-function showCheer(startIso, endIso) {
-  document.getElementById('cheer-start').textContent = timeStr(startIso);
-  document.getElementById('cheer-end').textContent   = timeStr(endIso);
+function showCheer(shift) {
+  document.getElementById('cheer-start').textContent = timeStr(shift.startedAt);
+  document.getElementById('cheer-end').textContent   = timeStr(shift.endedAt);
   document.getElementById('cheer-overlay').classList.add('show');
 }
 function closeCheer() {
   document.getElementById('cheer-overlay').classList.remove('show');
+}
+
+// 완봉 판정: X 없음 + 미처리 없음 + 예정 출근/마감 시간 준수
+function computeGrade(shift) {
+  const all = Object.values(shift.tasks).flat();
+  if (!all.length) return { perfect:false };
+  const noX        = !all.some(t => t.status === 'x');
+  const allHandled = all.every(t => t.status === 'o' || t.status === 'skip');
+  if (!shift.planned || !shift.startedAt || !shift.endedAt) {
+    return { perfect:false, noX, allHandled };
+  }
+  const [ph, pm] = shift.planned.start.split(':').map(Number);
+  const [qh, qm] = shift.planned.end.split(':').map(Number);
+  const s = new Date(shift.startedAt), e = new Date(shift.endedAt);
+  const sBase = new Date(shift.startedAt); sBase.setHours(ph, pm, 0, 0);
+  const eBase = new Date(shift.endedAt);   eBase.setHours(qh, qm, 0, 0);
+
+  let startDiff = (s - sBase) / 60000;
+  let endDiff   = (e - eBase) / 60000;
+  if (endDiff < -720) endDiff += 1440;                    // 자정 넘김 보정
+
+  const isSunday  = new Date(shift.date + 'T12:00:00').getDay() === 0;
+  const endGrace  = isSunday ? 30 : 20;
+
+  const perfectStart = startDiff >= -60 && startDiff <= 10;
+  const perfectEnd   = endDiff <= endGrace;
+
+  return { perfect: noX && allHandled && perfectStart && perfectEnd };
 }
 
 // ── NAVIGATION ────────────────────────────────────────
@@ -794,9 +969,9 @@ function showPage(name) {
   document.getElementById('page-'+name).classList.add('active');
   document.getElementById('nav-'+name).classList.add('active');
   window.scrollTo(0,0);
-  if (name==='shift')  renderShift();
-  if (name==='manual') renderManual();
-  if (name==='edit')   renderEdit();
+  if (name==='shift') renderShift();
+  if (name==='stats') renderStats();
+  if (name==='edit')  renderEdit();
 }
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -804,8 +979,14 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 // ── SHIFT ─────────────────────────────────────────────
 function startShift() {
   const data  = load();
-  const today = new Date().toISOString().split('T')[0];
-  const shift = { id:Date.now(), date:today, startedAt:new Date().toISOString(), endedAt:null, tasks:{} };
+  const today = todayISO();
+  const sched = (data.weekSchedule && data.weekSchedule.days) ? data.weekSchedule.days[today] : null;
+  const shift = {
+    id: Date.now(), date: today,
+    startedAt: new Date().toISOString(), endedAt: null,
+    planned: sched ? { start: sched.start, end: sched.end } : null,
+    tasks: {}
+  };
   ['6','8','9'].forEach(k => {
     shift.tasks[k] = data.templates[k].tasks.map(t => ({...t, status: null}));
   });
@@ -848,24 +1029,19 @@ function editPastShift(idx) {
 }
 function savePastShift() {
   const data = load();
-  if (_editPastIdx === null || !data.shifts[_editPastIdx]) {
-    closeModal('modal-edit-past'); return;
-  }
+  if (_editPastIdx === null || !data.shifts[_editPastIdx]) { closeModal('modal-edit-past'); return; }
   const sh = data.shifts[_editPastIdx];
-  const newDate  = document.getElementById('ep-date').value;  // YYYY-MM-DD
-  const newStart = document.getElementById('ep-start').value; // HH:MM
-  const newEnd   = document.getElementById('ep-end').value;   // HH:MM
+  const newDate  = document.getElementById('ep-date').value;
+  const newStart = document.getElementById('ep-start').value;
+  const newEnd   = document.getElementById('ep-end').value;
 
   const baseDate = newDate || sh.date;
   if (newDate) sh.date = newDate;
+  if (newStart && baseDate) sh.startedAt = new Date(baseDate + 'T' + newStart + ':00').toISOString();
+  if (newEnd   && baseDate) sh.endedAt   = new Date(baseDate + 'T' + newEnd   + ':00').toISOString();
 
-  // 로컬 시간 문자열로 ISO 생성 (YYYY-MM-DDTHH:MM:00 → 브라우저가 로컬로 파싱)
-  if (newStart && baseDate) {
-    sh.startedAt = new Date(baseDate + 'T' + newStart + ':00').toISOString();
-  }
-  if (newEnd && baseDate) {
-    sh.endedAt = new Date(baseDate + 'T' + newEnd + ':00').toISOString();
-  }
+  const g = computeGrade(sh);
+  sh.perfect = g.perfect;
 
   save(data);
   closeModal('modal-edit-past');
@@ -883,6 +1059,7 @@ function cancelShift(doSave) {
   if (data.currentShift) {
     if (doSave) {
       data.currentShift.endedAt = new Date().toISOString();
+      data.currentShift.perfect = computeGrade(data.currentShift).perfect;
       data.shifts.push(data.currentShift);
     }
     data.currentShift = null;
@@ -894,32 +1071,69 @@ function cancelShift(doSave) {
 function renderShift() {
   const data = load();
   const s    = data.currentShift;
+  const today = todayISO();
+  const wk = isoWeekInfo(new Date());
+  const registered = !!(data.weekSchedule && data.weekSchedule.weekKey === wk.key);
+  const sched = (data.weekSchedule && data.weekSchedule.days) ? data.weekSchedule.days[today] : null;
+  const doneToday = data.shifts.some(sh => sh.date === today);
+
   document.getElementById('no-shift').style.display     = s ? 'none' : 'block';
   document.getElementById('active-shift').style.display = s ? 'block': 'none';
+
+  // 이번 주 근무 등록 카드
+  const showReg = !s && !registered;
+  document.getElementById('sch-register').style.display = showReg ? 'block' : 'none';
+  if (showReg) {
+    renderScheduleForm('sch-register-form');
+    document.getElementById('sch-reg-sub').textContent =
+      [1,2].includes(new Date().getDay()) ? '이번 주 근무 등록' : '이번 주 근무 미등록';
+  }
+
+  // 오늘 근무일 배너
+  const banner = document.getElementById('today-banner');
+  if (!s && sched && !doneToday) {
+    banner.style.display = 'flex';
+    banner.innerHTML = `<span class="tb-text">오늘 근무일 · ${sched.start}–${sched.end}</span><button onclick="startShift()">근무 시작</button>`;
+  } else {
+    banner.style.display = 'none';
+  }
+
   if (s) {
     const startT = timeStr(s.startedAt);
     document.getElementById('shift-start-badge').textContent = startT ? `출근 ${startT}` : '';
+    document.getElementById('shift-blocks').innerHTML = ['6','8','9'].map(k => {
+      const tmpl = data.templates[k], crit = k === '9';
+      return `<div class="card">
+        <div class="card-title ${crit?'red-title':''}">${tmpl.label} <span class="time-count" id="count-${k}"></span></div>
+        <div class="time-prog"><div class="time-bar ${crit?'red':''}" id="bar-${k}" style="width:0%"></div></div>
+        <div class="task-list" id="list-${k}"></div>
+      </div>`;
+    }).join('');
     ['6','8','9'].forEach(k => renderBlock(k, s.tasks[k]));
     updateStats(s);
   }
+
   const hasPast = data.shifts.length > 0;
   document.getElementById('past-section').style.display = hasPast ? 'block' : 'none';
   if (hasPast) {
-    const total_shifts = data.shifts.length;
-    document.getElementById('past-list').innerHTML = [...data.shifts].reverse().map((sh, dispIdx) => {
-      const realIdx = total_shifts - 1 - dispIdx;
+    const n = data.shifts.length;
+    document.getElementById('past-list').innerHTML = [...data.shifts].reverse().map((sh, di) => {
+      const realIdx = n - 1 - di;
       const all     = Object.values(sh.tasks).flat();
       const done    = all.filter(t=>t.status==='o').length;
       const handled = all.filter(t=>t.status).length;
       const total   = all.length;
       const endT    = sh.endedAt ? ' · 퇴근 ' + timeStr(sh.endedAt) : '';
+      const pf      = sh.perfect ? `<span class="badge badge-done">완봉</span>` : '';
+      const complete = handled === total && total > 0;
       return `<div class="past-item">
         <div>
           <div class="past-date">${dateStr(sh.date)}</div>
           <div class="past-meta">${done}/${total} 완료${endT}</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
-          <span class="badge ${handled===total?'badge-done':'badge-partial'}">${handled===total?'완료':'미완료'}</span>
+          ${pf}
+          <span class="badge ${complete?'badge-done':'badge-partial'}">${complete?'완료':'미완료'}</span>
           <button onclick="editPastShift(${realIdx})" style="background:none;border:1px solid var(--border-blue);color:var(--blue);font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">수정</button>
           <button onclick="deletePastShift(${realIdx})" style="background:none;border:1px solid rgba(192,57,43,.3);color:var(--red);font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">삭제</button>
         </div>
@@ -943,6 +1157,7 @@ function renderBlock(k, tasks) {
   const handled = tasks.filter(t=>t.status).length;
   const total   = tasks.length;
   const bar     = document.getElementById('bar-'+k);
+  if (!bar) return;
   bar.style.width = (total ? handled/total*100 : 0) + '%';
   if (handled===total && total>0) bar.classList.add('done'); else bar.classList.remove('done');
   document.getElementById('count-'+k).textContent = `${handled}/${total}`;
@@ -973,19 +1188,10 @@ function endShift() {
   const data = load();
   if (!data.currentShift) { closeModal('modal-end'); return; }
 
-  const now      = new Date();
-  const startDt  = new Date(data.currentShift.startedAt);
-  const startH   = startDt.getHours(), startMin = startDt.getMinutes();
-  const endH     = now.getHours(),     endMin   = now.getMinutes();
-
-  // 출근 17:00~17:10, 종료 21:20 이내
-  const perfectStart = startH === 17 && startMin <= 10;
-  const perfectEnd   = (endH === 21 && endMin <= 20) || endH < 21;
-  const isSuper      = perfectStart && perfectEnd;
-
-  data.currentShift.endedAt = now.toISOString();
-  const savedStart = data.currentShift.startedAt;
-  const savedEnd   = data.currentShift.endedAt;
+  data.currentShift.endedAt = new Date().toISOString();
+  const grade = computeGrade(data.currentShift);
+  data.currentShift.perfect = grade.perfect;
+  const saved = data.currentShift;
 
   data.shifts.push(data.currentShift);
   data.currentShift = null;
@@ -994,46 +1200,197 @@ function endShift() {
   closeModal('modal-end');
   renderShift();
 
-  if (isSuper) showCheer(savedStart, savedEnd);
+  if (grade.perfect) showCheer(saved);
 }
 
-// ── MANUAL ────────────────────────────────────────────
-let activeTab = null;
+// ── 주간 스케줄 폼 ────────────────────────────────────
+function guessPrevTimes(data) {
+  if (data.weekSchedule && data.weekSchedule.days) {
+    const vals = Object.values(data.weekSchedule.days);
+    if (vals.length) return { start: vals[vals.length-1].start, end: vals[vals.length-1].end };
+  }
+  for (let i = data.shifts.length - 1; i >= 0; i--) {
+    if (data.shifts[i].planned) return { start: data.shifts[i].planned.start, end: data.shifts[i].planned.end };
+  }
+  return { start:'17:00', end:'21:00' };
+}
 
-function renderManual() {
+function renderScheduleForm(mountId) {
   const data = load();
-  const cats = data.manual.categories;
-  const tabsEl = document.getElementById('manual-tabs');
-  const contEl = document.getElementById('manual-contents');
-  const empEl  = document.getElementById('manual-empty');
-  if (!cats.length) { tabsEl.innerHTML=''; contEl.innerHTML=''; empEl.style.display='block'; return; }
-  empEl.style.display = 'none';
-  if (!activeTab || !cats.find(c=>c.id===activeTab)) activeTab = cats[0].id;
-  tabsEl.innerHTML = cats.map(c =>
-    `<button class="task-tab ${c.id===activeTab?'active':''}" onclick="switchTab('${c.id}')">${c.name}</button>`
-  ).join('');
-  contEl.innerHTML = cats.map(c => `
-    <div class="manual-pane ${c.id===activeTab?'active':''}" id="mc-${c.id}">
-      ${!c.items.length
-        ? `<div class="empty-state">NO ITEMS · 편집 탭에서 추가해보세요</div>`
-        : c.items.map(it => {
-            const url = pathToUrl(it.image);
-            return `<div class="m-item">
-              <div class="m-item-name">${it.name}</div>
-              ${it.desc ? `<div class="m-item-desc">${it.desc.replace(/\n/g,'<br>')}</div>` : ''}
-              ${url ? `<div class="m-item-img"><img src="${url}" alt="${it.name}" onerror="this.parentElement.style.display='none'"></div>` : ''}
-            </div>`;
-          }).join('')
-      }
-    </div>`).join('');
+  const wk = isoWeekInfo(new Date());
+  const days = weekDays(wk.monday);
+  const existing = (data.weekSchedule && data.weekSchedule.weekKey === wk.key) ? data.weekSchedule.days : {};
+  const prev = guessPrevTimes(data);
+
+  const rows = days.map(d => {
+    const iso = isoOf(d);
+    const cur = existing[iso];
+    const on  = !!cur;
+    const st  = (cur && cur.start) || prev.start;
+    const en  = (cur && cur.end)   || prev.end;
+    return `<div class="sch-row ${on?'on':''}" id="schrow-${iso}">
+      <div class="sch-head">
+        <label>
+          <input type="checkbox" id="schon-${iso}" ${on?'checked':''} onchange="toggleSchRow('${iso}')">
+          <span>${d.getMonth()+1}/${d.getDate()} (${DAYS_KO[d.getDay()]})</span>
+        </label>
+      </div>
+      <div class="sch-times">
+        <input type="time" id="schs-${iso}" value="${st}">
+        <span>~</span>
+        <input type="time" id="sche-${iso}" value="${en}">
+      </div>
+    </div>`;
+  }).join('');
+
+  const notifyBtn = (!notifySupported() || (notifyGranted() && data.settings.notify))
+    ? '' : `<button class="btn-save-inline" onclick="enableNotify()">🔔 알림 켜기</button>`;
+
+  document.getElementById(mountId).innerHTML = `
+    <div class="sch-week">${wk.monday.getMonth()+1}/${wk.monday.getDate()} ~ ${wk.sunday.getMonth()+1}/${wk.sunday.getDate()}</div>
+    ${rows}
+    <div class="sch-actions"><button class="btn-add-row" onclick="saveSchedule('${mountId}')">이번 주 근무 저장</button></div>
+    <div class="sch-sub">
+      <button class="btn-save-inline" onclick="downloadICS()">📅 캘린더에 추가 (.ics)</button>
+      ${notifyBtn}
+    </div>`;
 }
-function switchTab(id) { activeTab=id; renderManual(); }
+function toggleSchRow(iso) {
+  const on = document.getElementById('schon-'+iso).checked;
+  document.getElementById('schrow-'+iso).classList.toggle('on', on);
+}
+function saveSchedule(mountId) {
+  const data = load();
+  const wk = isoWeekInfo(new Date());
+  const days = weekDays(wk.monday);
+  const out = {};
+  days.forEach(d => {
+    const iso = isoOf(d);
+    if (document.getElementById('schon-'+iso).checked) {
+      out[iso] = {
+        start: document.getElementById('schs-'+iso).value || '17:00',
+        end:   document.getElementById('sche-'+iso).value || '21:00'
+      };
+    }
+  });
+  data.weekSchedule = { weekKey: wk.key, days: out };
+  data.settings.notifiedFor = {};
+  save(data);
+  const cnt = Object.keys(out).length;
+  toast(cnt ? `이번 주 근무 ${cnt}일 저장했어요` : '이번 주는 근무 없음으로 저장했어요');
+
+  if (notifySupported() && !notifyGranted() && cnt) enableNotify();
+
+  renderScheduleForm(mountId);
+  renderShift();
+}
+
+// ── STATS ─────────────────────────────────────────────
+function avgTimeOfDay(isos, isEnd) {
+  const mins = isos.filter(Boolean).map(iso => {
+    const d = new Date(iso);
+    let v = d.getHours()*60 + d.getMinutes();
+    if (isEnd && d.getHours() < 6) v += 1440;   // 자정 넘긴 퇴근 보정
+    return v;
+  });
+  if (!mins.length) return null;
+  let a = Math.round(mins.reduce((x,y)=>x+y,0)/mins.length);
+  a = ((a % 1440) + 1440) % 1440;
+  return `${pad(Math.floor(a/60))}:${pad(a%60)}`;
+}
+function fmtDur(ms) {
+  const min = Math.round(ms/60000);
+  return `${Math.floor(min/60)}h ${pad(min%60)}m`;
+}
+
+function renderNotifyBox() {
+  const data = load();
+  const supported = notifySupported();
+  const on = data.settings.notify && notifyGranted();
+  let desc;
+  if (!supported)      desc = '이 브라우저는 알림을 지원하지 않아요';
+  else if (on)         desc = '켜짐 · 근무 5분 전 + 시작 시각에 알림 (앱 탭이 열려 있을 때)';
+  else                 desc = '꺼짐 · 캘린더(.ics)를 폰에 추가하면 앱이 닫혀 있어도 알림이 와요';
+  document.getElementById('notify-box').innerHTML = `
+    <div class="notify-row">
+      <div>
+        <div class="nr-name">근무 시작 알림</div>
+        <div class="nr-desc">${desc}</div>
+      </div>
+      ${supported ? `<button class="btn-save-inline" onclick="${on?'disableNotify()':'enableNotify()'}">${on?'끄기':'켜기'}</button>` : ''}
+    </div>`;
+}
+
+function renderStats() {
+  renderNotifyBox();
+  const data = load();
+  const sh = data.shifts.slice();
+  const body = document.getElementById('stats-body');
+
+  if (!sh.length) {
+    body.innerHTML = `<div class="card"><div class="empty-state">아직 근무 기록이 없어요</div></div>`;
+    return;
+  }
+
+  const avgIn  = avgTimeOfDay(sh.map(s=>s.startedAt), false);
+  const avgOut = avgTimeOfDay(sh.map(s=>s.endedAt), true);
+
+  const withPlan = sh.filter(s => s.planned && s.startedAt);
+  const onTime = withPlan.filter(s => {
+    const [h,m] = s.planned.start.split(':').map(Number);
+    const base = new Date(s.startedAt); base.setHours(h,m,0,0);
+    const diff = (new Date(s.startedAt) - base)/60000;
+    return diff >= -60 && diff <= 10;
+  });
+  const rate = withPlan.length ? Math.round(onTime.length/withPlan.length*100) : null;
+
+  const durs = sh.filter(s=>s.startedAt&&s.endedAt).map(s=>{
+    let ms = new Date(s.endedAt) - new Date(s.startedAt);
+    if (ms < 0) ms += 86400000;
+    return ms;
+  });
+  const avgDur = durs.length ? fmtDur(durs.reduce((a,b)=>a+b,0)/durs.length) : '—';
+
+  const ym = todayISO().slice(0,7);
+  const monthCount = sh.filter(s => (s.date||'').slice(0,7) === ym).length;
+  const perfectCount = sh.filter(s => s.perfect).length;
+
+  const recent = [...sh].reverse().slice(0, 8).map(s => {
+    const inT  = s.startedAt ? timeStr(s.startedAt) : '—';
+    const outT = s.endedAt   ? timeStr(s.endedAt)   : '—';
+    const pf   = s.perfect ? `<span class="badge badge-done">완봉</span>` : '';
+    return `<div class="past-item">
+      <div>
+        <div class="past-date">${dateStr(s.date)}</div>
+        <div class="past-meta">출근 ${inT} · 퇴근 ${outT}</div>
+      </div>
+      ${pf}
+    </div>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-label">AVG IN</div><div class="stat-num sm">${avgIn||'—'}</div><div class="stat-sub">평균 출근</div></div>
+      <div class="stat-box"><div class="stat-label">AVG OUT</div><div class="stat-num sm">${avgOut||'—'}</div><div class="stat-sub">평균 퇴근</div></div>
+      <div class="stat-box"><div class="stat-label">ON TIME</div><div class="stat-num sm green">${rate==null?'—':rate+'%'}</div><div class="stat-sub">정시 출근</div></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-label">AVG SHIFT</div><div class="stat-num sm">${avgDur}</div><div class="stat-sub">평균 근무</div></div>
+      <div class="stat-box"><div class="stat-label">THIS MONTH</div><div class="stat-num sm">${monthCount}</div><div class="stat-sub">이번 달 근무</div></div>
+      <div class="stat-box"><div class="stat-label">PERFECT</div><div class="stat-num sm red">${perfectCount}</div><div class="stat-sub">완봉 마감</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">RECENT <span class="sub">최근 근무 ${Math.min(8,sh.length)}건</span></div>
+      <div>${recent}</div>
+    </div>`;
+}
 
 // ── EDIT ─────────────────────────────────────────────
 function renderEdit() {
   const data = load();
+  renderScheduleForm('edit-schedule');
   renderEditTasks(data);
-  renderEditManual(data);
+  renderEmailSettings(data);
 }
 function renderEditTasks(data) {
   document.getElementById('edit-tasks').innerHTML =
@@ -1083,79 +1440,49 @@ function addTask(k) {
   tasks.push({id: tasks.length ? Math.max(...tasks.map(t=>t.id))+1 : 1, text:inp.value.trim()});
   save(data); renderEdit();
 }
-function renderEditManual(data) {
-  const cats = data.manual.categories;
-  document.getElementById('edit-manual').innerHTML = `
-    ${cats.map((cat,ci) => `
-      <div>
-        <div class="cat-hd">
-          <span class="cat-hd-name">${cat.name}</span>
-          <button class="btn-del" onclick="delCat(${ci})">✕</button>
-        </div>
-        ${cat.items.map((it,ii)=>`
-          <div class="edit-row">
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:500">${it.name}</div>
-              ${it.desc?`<div style="font-size:11px;color:var(--ink-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.desc}</div>`:''}
-            </div>
-            <button class="btn-edit" onclick="editItem(${ci},${ii})">✎</button>
-            <button class="btn-del"  onclick="delItem(${ci},${ii})">✕</button>
-          </div>`).join('')}
-        <div style="padding:10px 16px;border-bottom:1px solid var(--border)">
-          <button class="btn-save-inline" onclick="openAddItem(${ci})">+ 항목 추가</button>
-        </div>
-      </div>
-      ${ci<cats.length-1?'<div style="height:1px;background:var(--border)"></div>':''}`
-    ).join('')}
-    <div class="input-row" style="margin-top:0">
-      <input type="text" id="new-cat" placeholder="새 카테고리 이름..."
-             onkeydown="if(event.key==='Enter') addCat()">
-      <button class="btn-add-row" onclick="addCat()">+ ADD</button>
-    </div>`;
-}
-function addCat() {
-  const inp = document.getElementById('new-cat');
-  if (!inp?.value.trim()) return;
-  const data = load();
-  data.manual.categories.push({id:'c'+Date.now(), name:inp.value.trim(), items:[]});
-  save(data); renderEdit();
-}
-function delCat(ci) {
-  if (!confirm('카테고리를 삭제할까요?')) return;
-  const data = load(); data.manual.categories.splice(ci,1);
-  activeTab=null; save(data); renderEdit();
-}
-function delItem(ci,ii) {
-  const data = load(); data.manual.categories[ci].items.splice(ii,1); save(data); renderEdit();
-}
 
-// ── ITEM MODAL ────────────────────────────────────────
-let _ci=null, _ii=null;
-function openAddItem(ci) { _ci=ci; _ii=null; setItemModal('항목 추가',{name:'',desc:'',image:''}); }
-function editItem(ci,ii) { _ci=ci; _ii=ii; setItemModal('항목 수정', load().manual.categories[ci].items[ii]); }
-function setItemModal(title, item) {
-  document.getElementById('item-modal-title').textContent = title;
-  document.getElementById('item-name').value = item.name||'';
-  document.getElementById('item-desc').value = item.desc||'';
-  document.getElementById('item-img').value  = item.image||'';
-  openModal('modal-item');
-  setTimeout(()=>document.getElementById('item-name').focus(), 100);
+function renderEmailSettings(data) {
+  const s = data.settings;
+  const last = s.lastEmailWeek || '없음';
+  document.getElementById('edit-email').innerHTML = `
+    <div class="modal-field">
+      <label>받는 이메일 주소</label>
+      <input type="email" id="set-email" placeholder="you@example.com" value="${(s.email||'').replace(/"/g,'&quot;')}">
+    </div>
+    <div class="modal-field">
+      <label>Web3Forms 액세스 키</label>
+      <input type="text" id="set-web3" placeholder="xxxxxxxx-xxxx-xxxx-..." value="${(s.web3key||'').replace(/"/g,'&quot;')}">
+    </div>
+    <div class="modal-hint" style="margin-bottom:14px">
+      web3forms.com 에서 이메일만 입력하면 액세스 키를 메일로 받아요 (가입 불필요).<br>
+      키를 넣으면 <b>매주 월요일</b> 자동으로, 아래 버튼으로 언제든 백업이 메일로 옵니다.
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-save-inline" onclick="saveEmailSettings()">설정 저장</button>
+      <button class="btn-save-inline" onclick="sendBackupEmail(false)">지금 이메일로 보내기</button>
+      <button class="btn-save-inline" onclick="downloadBackupFile()">파일로 저장</button>
+    </div>
+    <div style="font-size:10px;color:var(--ink-muted);margin-top:12px;letter-spacing:.5px">마지막 자동 발송 주: ${last}</div>`;
 }
-function saveItem() {
-  const name = document.getElementById('item-name').value.trim();
-  if (!name) { document.getElementById('item-name').focus(); return; }
-  const data = load();
-  const item = { name, desc: document.getElementById('item-desc').value.trim(), image: document.getElementById('item-img').value.trim() || null };
-  if (_ii!==null) data.manual.categories[_ci].items[_ii]=item;
-  else            data.manual.categories[_ci].items.push(item);
-  save(data); closeModal('modal-item'); renderEdit();
+function saveEmailSettings() {
+  const d = load();
+  d.settings.email   = document.getElementById('set-email').value.trim();
+  d.settings.web3key = document.getElementById('set-web3').value.trim();
+  save(d);
+  toast('저장했어요');
 }
 
 // ── INIT ─────────────────────────────────────────────
 (function() {
-  if (!localStorage.getItem('closing-v1')) save(JSON.parse(JSON.stringify(DEFAULTS)));
+  const boot = load();
+  save(boot);
   renderShift();
-  checkWeeklyBackup();
+  checkWeeklyEmail();
+  notifyCheck();
+  setInterval(notifyCheck, 20000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) { notifyCheck(); checkWeeklyEmail(); }
+  });
 })();
 </script>
 </body>
