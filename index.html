@@ -876,15 +876,37 @@ function downloadBackupFile(){
 async function sendBackupEmail(silent) {
   const data = load();
   const v = (data.settings.email || '').trim();
-  if (!v) { if (!silent) toast('편집 탭에서 이메일 주소를 먼저 입력하세요'); return false; }
+  if (!v) { if (!silent) toast('편집 탭에서 이메일 주소(또는 Apps Script URL)를 먼저 넣으세요'); return false; }
 
   const now = new Date();
   const label = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())}`;
   const isHook = /^https?:\/\//i.test(v);
-  const url = isHook ? v : `https://formsubmit.co/ajax/${encodeURIComponent(v)}`;
   if (!silent) toast('전송 중...');
+
+  // 1) Apps Script 등 웹훅 URL — CORS preflight 피하려고 text/plain 로 전송
+  if (isHook) {
+    const payload = JSON.stringify({ subject: `[마감체크리스트] 백업 ${label}`, date: label, backup: backupJSON() });
+    try {
+      const res = await fetch(v, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: payload, redirect:'follow' });
+      if (res.ok || res.type === 'opaqueredirect') { if (!silent) toast('백업을 보냈어요 ✉️'); return true; }
+      if (!silent) toast('전송 실패 (HTTP ' + res.status + ')');
+      return false;
+    } catch(e) {
+      // CORS 로 응답을 못 읽는 경우 — no-cors 로 재시도 (성공 여부는 확인 불가)
+      try {
+        await fetch(v, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: payload, mode:'no-cors' });
+        if (!silent) toast('백업을 보냈어요 (메일 도착 확인해줘) ✉️');
+        return true;
+      } catch(e2) {
+        if (!silent) toast('전송 실패 — URL 확인 (네트워크)');
+        return false;
+      }
+    }
+  }
+
+  // 2) 이메일 주소 — formsubmit.co (첫 사용 시 확인 메일의 링크를 눌러야 활성화됨)
   try {
-    const res = await fetch(url, {
+    const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(v)}`, {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
       body: JSON.stringify({
@@ -892,14 +914,14 @@ async function sendBackupEmail(silent) {
         _captcha: 'false',
         _template: 'box',
         date: label,
-        message: '마감체크리스트 백업 데이터입니다. 아래 backup 내용을 앱 복원에 사용하세요.',
+        message: '마감체크리스트 백업입니다. 아래 backup 값을 앱 편집탭 "파일 불러오기"에 붙여 복원하세요.',
         backup: backupJSON()
       })
     });
-    let ok = res.ok, msg = '';
-    try { const j = await res.json(); if (j) { ok = (j.success === true || j.success === 'true') || (res.ok && j.success === undefined); msg = j.message || ''; } } catch(e) {}
+    let ok = false, msg = '';
+    try { const j = await res.json(); ok = (j.success === true || j.success === 'true'); msg = j.message || ''; } catch(e) { ok = res.ok; }
     if (ok) { if (!silent) toast('이메일로 백업을 보냈어요 ✉️'); return true; }
-    if (!silent) toast('전송 실패' + (msg ? ' · ' + msg : ' — 주소를 확인하세요'));
+    if (!silent) toast(msg ? ('확인 필요: ' + msg) : '전송 실패 — 메일함(스팸함)에서 formsubmit 확인 메일을 눌러 활성화하세요');
     return false;
   } catch(e) {
     if (!silent) toast('전송 실패 (네트워크 오류)');
@@ -1729,13 +1751,13 @@ function renderEmailSettings(data) {
   const isHook = /^https?:\/\//i.test(v);
   document.getElementById('edit-email').innerHTML = `
     <div class="modal-field">
-      <label>받는 이메일 주소 (또는 웹훅 URL)</label>
-      <input type="text" id="set-email" placeholder="you@example.com" value="${v.replace(/"/g,'&quot;')}">
+      <label>이메일 주소 또는 Apps Script URL</label>
+      <input type="text" id="set-email" placeholder="you@example.com 또는 https://script.google.com/…/exec" value="${v.replace(/"/g,'&quot;')}">
     </div>
     <div class="modal-hint" style="margin-bottom:14px">
-      이메일을 넣으면 formsubmit.co 를 통해 <b>나에게 보내기</b>로 백업이 옵니다.
-      처음 한 번은 도착한 확인 메일의 링크를 눌러 활성화하세요.
-      Apps Script 같은 웹훅 URL(http…)을 넣어도 됩니다. <b>매주 월요일</b> 자동 발송.
+      <b>Apps Script URL</b>(<code>https://script.google.com/…/exec</code>)을 넣으면 바로 나에게 메일이 와요 (추천).<br>
+      그냥 <b>이메일 주소</b>를 넣으면 formsubmit.co 를 거치는데, <u>처음 1회</u>는 받은 메일함·스팸함의 formsubmit 확인 메일 링크를 눌러야 합니다.<br>
+      설정하면 <b>매주 월요일</b> 자동 발송.
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn-save-inline" onclick="saveEmailSettings()">설정 저장</button>
