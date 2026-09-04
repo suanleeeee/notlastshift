@@ -236,6 +236,13 @@ main {
 }
 .divider-label::before,.divider-label::after { content:''; flex:1; height:1px; background:var(--border); }
 
+.hist-month {
+  font-family:'Bebas Neue',sans-serif; letter-spacing:2px; font-size:13px;
+  color:var(--ink-sub); padding:11px 16px 10px; background:var(--bg);
+  border-bottom:1px solid var(--border);
+  display:flex; justify-content:space-between; align-items:baseline;
+}
+.hist-month .hm-sub { font-family:'Noto Sans KR',sans-serif; font-size:11px; letter-spacing:0; color:var(--ink-muted); }
 .past-item {
   display:flex; align-items:center; justify-content:space-between;
   padding:12px 16px; border-bottom:1px solid var(--border);
@@ -374,7 +381,7 @@ main {
   position:fixed; bottom:0; left:0; right:0;
   background:rgba(248,248,246,0.96);
   border-top:2px solid var(--blue);
-  display:grid; grid-template-columns:repeat(3,1fr);
+  display:grid; grid-template-columns:repeat(4,1fr);
   z-index:100;
   padding-bottom:env(safe-area-inset-bottom);
   backdrop-filter:blur(12px);
@@ -617,16 +624,16 @@ input, select, button { font-size:16px; }
       <div id="all-done" class="done-banner" style="display:none">✨ &nbsp;모든 항목 완료! 퇴근 준비 끝났어요</div>
     </div>
 
-    <!-- 지난 근무 -->
-    <div id="past-section" style="display:none">
-      <div class="divider-label">PAST SHIFTS</div>
-      <div class="card"><div id="past-list"></div></div>
-    </div>
   </div>
 
   <!-- ── 통계 ── -->
   <div id="page-stats" class="page">
     <div id="stats-body"></div>
+  </div>
+
+  <!-- ── 기록 ── -->
+  <div id="page-history" class="page">
+    <div id="history-body"></div>
   </div>
 
   <!-- ── 편집 ── -->
@@ -659,6 +666,10 @@ input, select, button { font-size:16px; }
   <button class="nav-btn" id="nav-stats" onclick="showPage('stats')">
     <span class="nav-icon">📊</span>
     통계
+  </button>
+  <button class="nav-btn" id="nav-history" onclick="showPage('history')">
+    <span class="nav-icon">📅</span>
+    기록
   </button>
   <button class="nav-btn" id="nav-edit" onclick="showPage('edit')">
     <span class="nav-icon">✏</span>
@@ -1014,9 +1025,10 @@ function showPage(name) {
   document.getElementById('page-'+name).classList.add('active');
   document.getElementById('nav-'+name).classList.add('active');
   window.scrollTo(0,0);
-  if (name==='shift') renderShift();
-  if (name==='stats') renderStats();
-  if (name==='edit')  renderEdit();
+  if (name==='shift')   renderShift();
+  if (name==='stats')   renderStats();
+  if (name==='history') renderHistory();
+  if (name==='edit')    renderEdit();
 }
 function openModal(id){ document.getElementById(id).classList.add('open'); }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
@@ -1183,7 +1195,7 @@ function extraSchedule() {
   save(data);
   closeModal('modal-extra');
   showPage('shift');
-  renderShift();
+  renderShift(); renderHistory();
   toast((isPast || !inCurWeek) ? '지난 대타 근무를 기록으로 추가했어요' : '대타 근무를 스케줄에 등록했어요');
 }
 
@@ -1212,13 +1224,13 @@ function savePastShift() {
   if (newEnd   && baseDate) sh.endedAt   = new Date(baseDate + 'T' + newEnd   + ':00').toISOString();
   sh.perfect = computeGrade(sh).perfect;
   save(data);
-  closeModal('modal-edit-past'); renderShift();
+  closeModal('modal-edit-past'); renderHistory(); renderShift();
 }
 function deletePastShift(idx) {
   if (!confirm('이 근무 기록을 삭제할까요?')) return;
   const data = load();
   data.shifts.splice(idx, 1);
-  save(data); renderShift();
+  save(data); renderHistory(); renderShift();
 }
 
 function cancelShift(doSave) {
@@ -1232,7 +1244,7 @@ function cancelShift(doSave) {
     data.currentShift = null;
     save(data);
   }
-  closeModal('modal-cancel'); renderShift();
+  closeModal('modal-cancel'); renderShift(); renderHistory();
 }
 
 function renderShift() {
@@ -1298,33 +1310,55 @@ function renderShift() {
     updateStats(s);
   }
 
-  const hasPast = data.shifts.length > 0;
-  document.getElementById('past-section').style.display = hasPast ? 'block' : 'none';
-  if (hasPast) {
-    const n = data.shifts.length;
-    document.getElementById('past-list').innerHTML = [...data.shifts].reverse().map((sh, di) => {
-      const realIdx = n - 1 - di;
-      const all = allTasks(sh);
-      const done = all.filter(t=>t.status==='o').length;
-      const handled = all.filter(t=>t.status).length;
-      const total = all.length;
-      const endT = sh.endedAt ? ' · 퇴근 ' + timeStr(sh.endedAt) : '';
-      const pf = sh.perfect ? `<span class="badge badge-done">완봉</span>` : '';
-      const complete = handled === total && total > 0;
-      return `<div class="past-item">
-        <div>
-          <div class="past-date">${dateStr(sh.date)}</div>
-          <div class="past-meta">${done}/${total} 완료${endT}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          ${pf}
-          <span class="badge ${complete?'badge-done':'badge-partial'}">${complete?'완료':'미완료'}</span>
-          <button onclick="editPastShift(${realIdx})" style="background:none;border:1px solid var(--border-blue);color:var(--blue);font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">수정</button>
-          <button onclick="deletePastShift(${realIdx})" style="background:none;border:1px solid rgba(192,57,43,.3);color:var(--red);font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">삭제</button>
-        </div>
-      </div>`;
-    }).join('');
+}
+
+// ── HISTORY (기록) ───────────────────────────────────
+function pastItemHTML(sh, idx) {
+  const all = allTasks(sh);
+  const done = all.filter(t=>t.status==='o').length;
+  const total = all.length;
+  const inT  = sh.startedAt ? '출근 ' + timeStr(sh.startedAt) : '';
+  const endT = sh.endedAt ? ' · 퇴근 ' + timeStr(sh.endedAt) : '';
+  const cnt  = total ? ` · ${done}/${total}` : '';
+  const pf   = sh.perfect ? `<span class="badge badge-done">완봉</span>` : '';
+  return `<div class="past-item">
+    <div>
+      <div class="past-date">${dateStr(sh.date)}</div>
+      <div class="past-meta">${inT}${endT}${cnt}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      ${pf}
+      <button onclick="editPastShift(${idx})" style="background:none;border:1px solid var(--border-blue);color:var(--blue);font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">수정</button>
+      <button onclick="deletePastShift(${idx})" style="background:none;border:1px solid rgba(192,57,43,.3);color:var(--red);font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">삭제</button>
+    </div>
+  </div>`;
+}
+
+function renderHistory() {
+  const data = load();
+  const body = document.getElementById('history-body');
+  if (!data.shifts.length) {
+    body.innerHTML = `<div class="card"><div class="empty-state">아직 근무 기록이 없어요</div></div>`;
+    return;
   }
+  const groups = {};
+  data.shifts.forEach((sh, idx) => {
+    const m = (sh.date || '').slice(0, 7) || '기타';
+    (groups[m] = groups[m] || []).push({ sh, idx });
+  });
+  const months = Object.keys(groups).sort().reverse();
+  body.innerHTML = months.map(m => {
+    const items = groups[m].slice().sort((a, b) => (b.sh.date || '').localeCompare(a.sh.date || ''));
+    const hrs = items.reduce((acc, { sh }) => acc + (sh.endedAt && sh.planned ? plannedHours(sh.planned) : 0), 0);
+    const label = m === '기타' ? '날짜 없음' : m.replace('-', '.');
+    return `<div class="card">
+      <div class="hist-month">
+        <span>${label}</span>
+        <span class="hm-sub">${items.length}일${hrs ? ` · ${trimH(hrs)}시간` : ''}</span>
+      </div>
+      ${items.map(({ sh, idx }) => pastItemHTML(sh, idx)).join('')}
+    </div>`;
+  }).join('');
 }
 
 function allTasks(shift) {
@@ -1383,7 +1417,7 @@ function endShift() {
   data.currentShift = null;
   save(data);
   closeModal('modal-end');
-  renderShift();
+  renderShift(); renderHistory();
   if (grade.perfect) showCheer(saved);
 }
 
@@ -1759,6 +1793,7 @@ window.addEventListener('error', e => {
 (function() {
   try { save(load()); } catch(e) {}
   try { renderShift(); } catch(e) { toast('화면 오류: ' + e.message); }
+  try { renderHistory(); } catch(e) {}
   try { checkWeeklyEmail(); } catch(e) {}
   try { notifyCheck(); } catch(e) {}
   setInterval(() => { try { notifyCheck(); } catch(e) {} }, 20000);
