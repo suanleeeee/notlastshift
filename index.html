@@ -913,10 +913,15 @@ async function sendBackupEmail(silent) {
     let ok = false, msg = '';
     try { const j = await res.json(); ok = (j.success === true || j.success === 'true'); msg = j.message || ''; } catch(e) { ok = res.ok; }
     if (ok) { if (!silent) toast('이메일로 백업을 보냈어요 ✉️'); return true; }
-    if (!silent) toast(msg ? ('확인 필요: ' + msg) : '전송 실패 — 메일함(스팸함)에서 formsubmit 확인 메일을 눌러 활성화하세요');
+    if (!silent) {
+      if (/server error|internal/i.test(msg) || res.status >= 500)
+        toast('formsubmit 서버 오류 · 편집탭 안내대로 Apps Script URL 방식을 쓰세요');
+      else if (msg) toast('메일 활성화 필요 — 스팸함의 formsubmit 확인 메일 클릭: ' + msg);
+      else toast('전송 실패 — Apps Script URL 방식을 권장 (편집탭 안내)');
+    }
     return false;
   } catch(e) {
-    if (!silent) toast('전송 실패 (네트워크 오류)');
+    if (!silent) toast('전송 실패 (네트워크) · Apps Script URL 방식 권장');
     return false;
   }
 }
@@ -1743,17 +1748,19 @@ function renderEmailSettings(data) {
   const isHook = /^https?:\/\//i.test(v);
   document.getElementById('edit-email').innerHTML = `
     <div class="modal-field">
-      <label>이메일 주소 또는 Apps Script URL</label>
-      <input type="text" id="set-email" placeholder="you@example.com 또는 https://script.google.com/…/exec" value="${v.replace(/"/g,'&quot;')}">
+      <label>Apps Script URL (권장) 또는 이메일 주소</label>
+      <input type="text" id="set-email" placeholder="https://script.google.com/…/exec" value="${v.replace(/"/g,'&quot;')}">
     </div>
-    <div class="modal-hint" style="margin-bottom:14px">
-      <b>Apps Script URL</b>(<code>https://script.google.com/…/exec</code>)을 넣으면 바로 나에게 메일이 와요 (추천).<br>
-      그냥 <b>이메일 주소</b>를 넣으면 formsubmit.co 를 거치는데, <u>처음 1회</u>는 받은 메일함·스팸함의 formsubmit 확인 메일 링크를 눌러야 합니다.<br>
+    <div class="modal-hint" style="margin-bottom:12px">
+      <b>추천:</b> PC에서 script.google.com → 새 프로젝트 → 아래 "코드 복사" 붙여넣기 →
+      배포(웹 앱 / 실행:나 / 액세스:모든 사용자) → <code>/exec</code> URL을 위에 붙여넣기.<br>
+      그냥 이메일만 넣으면 formsubmit.co 경유인데 서버 오류가 잦아요.
       설정하면 <b>매주 월요일</b> 자동 발송.
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn-save-inline" onclick="saveEmailSettings()">설정 저장</button>
       <button class="btn-save-inline" onclick="sendBackupEmail(false)">지금 보내기</button>
+      <button class="btn-save-inline" onclick="copyAppsScript()">Apps Script 코드 복사</button>
     </div>
     <div style="font-size:10px;color:var(--ink-muted);margin:12px 0 4px;letter-spacing:.5px">
       ${v ? (isHook ? '웹훅 모드' : '이메일 모드') : '미설정'} · 마지막 자동 발송 주: ${s.lastEmailWeek || '없음'}
@@ -1791,6 +1798,25 @@ function restoreBackup(e) {
     showPage('shift');
   };
   reader.readAsText(file);
+}
+function copyAppsScript() {
+  const code =
+`function doPost(e) {
+  var d = JSON.parse(e.postData.contents);
+  MailApp.sendEmail({
+    to: Session.getEffectiveUser().getEmail(),
+    subject: d.subject || '마감체크리스트 백업',
+    body: '백업 날짜: ' + (d.date || '') + '\\n\\n첨부 JSON을 앱 편집탭 "파일 불러오기"로 복원하세요.',
+    attachments: [Utilities.newBlob(d.backup, 'application/json', 'backup_' + (d.date || '') + '.json')]
+  });
+  return ContentService.createTextOutput('ok');
+}`;
+  const done = () => toast('Apps Script 코드를 복사했어요 — script.google.com 에 붙여넣기');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(code).then(done, () => { window.prompt('아래 코드를 복사하세요', code); });
+  } else {
+    window.prompt('아래 코드를 복사하세요', code);
+  }
 }
 function saveEmailSettings() {
   const d = load();
