@@ -883,24 +883,16 @@ async function sendBackupEmail(silent) {
   const isHook = /^https?:\/\//i.test(v);
   if (!silent) toast('전송 중...');
 
-  // 1) Apps Script 등 웹훅 URL — CORS preflight 피하려고 text/plain 로 전송
+  // 1) Apps Script 등 웹훅 URL — no-cors 단순 POST (preflight·CORS 회피, fire-and-forget)
   if (isHook) {
     const payload = JSON.stringify({ subject: `[마감체크리스트] 백업 ${label}`, date: label, backup: backupJSON() });
     try {
-      const res = await fetch(v, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: payload, redirect:'follow' });
-      if (res.ok || res.type === 'opaqueredirect') { if (!silent) toast('백업을 보냈어요 ✉️'); return true; }
-      if (!silent) toast('전송 실패 (HTTP ' + res.status + ')');
-      return false;
+      await fetch(v, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: payload, mode:'no-cors' });
+      if (!silent) toast('백업 요청을 보냈어요 — 메일 도착 확인해줘 ✉️');
+      return true;
     } catch(e) {
-      // CORS 로 응답을 못 읽는 경우 — no-cors 로 재시도 (성공 여부는 확인 불가)
-      try {
-        await fetch(v, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: payload, mode:'no-cors' });
-        if (!silent) toast('백업을 보냈어요 (메일 도착 확인해줘) ✉️');
-        return true;
-      } catch(e2) {
-        if (!silent) toast('전송 실패 — URL 확인 (네트워크)');
-        return false;
-      }
+      if (!silent) toast('전송 실패 — URL을 다시 확인해줘');
+      return false;
     }
   }
 
