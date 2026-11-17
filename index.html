@@ -1114,6 +1114,9 @@ function cycleCake(id) {
 }
 function delCakeItem(id) {
   const data = load();
+  const item = data.cakes.items.find(c => c.id === id);
+  if (!item) return;
+  if (!confirm(`"${item.text}" 삭제할까요?`)) return;
   data.cakes.items = data.cakes.items.filter(c => c.id !== id);
   save(data); renderCakeCard();
 }
