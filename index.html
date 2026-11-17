@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>오늘이 마지막 마감이 아니길</title>
+<title>오늘 마감이 마지막 마감이 아니길</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:ital,wght@1,700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -324,6 +324,25 @@ main {
 
 .empty-state { padding:32px 16px; text-align:center; font-size:11px; color:var(--ink-muted); letter-spacing:1px; }
 
+/* ── CAKE CHIPS ── */
+.cake-chips { display:flex; flex-wrap:wrap; }
+.cake-chip {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:8px 10px; margin:0 6px 8px 0;
+  border:1.5px solid var(--border); background:var(--bg-card);
+  font-size:13px; color:var(--ink-mid);
+  -webkit-tap-highlight-color:transparent;
+}
+.cake-chip > span:first-child { cursor:pointer; }
+.cake-chip.state-season     { background:var(--blue-pale); border-color:var(--border-blue); color:var(--blue); font-weight:600; }
+.cake-chip.state-noReserve  { background:rgba(192,57,43,.1); border-color:rgba(192,57,43,.4); color:var(--red); font-weight:600; }
+.cake-chip-icon {
+  background:none; border:none; color:inherit; opacity:.45;
+  font-size:11px; cursor:pointer; padding:0 1px;
+  -webkit-tap-highlight-color:transparent;
+}
+.cake-chip-icon:active { opacity:.9; }
+
 /* ── 요일/시간 폼 (고정 근무일) ── */
 .sch-week { font-family:'Bebas Neue',sans-serif; letter-spacing:2px; font-size:12px; color:var(--ink-muted); padding:2px 2px 10px; }
 .sch-row { padding:10px 2px; border-bottom:1px solid var(--border); }
@@ -547,7 +566,7 @@ input, select, button { font-size:16px; }
 <div class="modal-overlay" id="modal-end" onclick="closeModal('modal-end')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-title">근무 종료할까요?</div>
-    <p style="font-size:13px;color:var(--ink-sub);margin-bottom:0">완료하지 않은 항목이 있을 수 있어요. 종료하면 오늘 근무가 기록으로 저장돼요.</p>
+    <p id="modal-end-text" style="font-size:13px;color:var(--ink-sub);margin-bottom:0">완료하지 않은 항목이 있을 수 있어요. 종료하면 오늘 근무가 기록으로 저장돼요.</p>
     <div class="modal-btns">
       <button class="modal-btn-cancel" onclick="closeModal('modal-end')">취소</button>
       <button class="modal-btn-ok"     onclick="endShift()">종료하기</button>
@@ -593,7 +612,7 @@ input, select, button { font-size:16px; }
 </div>
 
 <header>
-  <div class="logo">오늘이 마지막 마감이 아니길</div>
+  <div class="logo">오늘 마감이 마지막 마감이 아니길</div>
   <div class="header-date" id="header-date"></div>
 </header>
 
@@ -601,6 +620,12 @@ input, select, button { font-size:16px; }
 
   <!-- ── 체크리스트 ── -->
   <div id="page-shift" class="page active">
+
+    <!-- 케이크 체크 -->
+    <div class="card" id="cake-card">
+      <div class="card-title">CAKE CHECK <span class="sub">시즌 · 예약 불가</span></div>
+      <div id="cake-body" style="padding:12px 16px 16px"></div>
+    </div>
 
     <div class="card" id="week-card">
       <div class="card-title">THIS WEEK <span class="sub" id="week-sub"></span></div>
@@ -614,7 +639,8 @@ input, select, button { font-size:16px; }
         <button class="btn-cancel-shift" onclick="openModal('modal-cancel')">← 잘못 눌렀어요</button>
         <span class="shift-start-badge" id="shift-start-badge" onclick="editStartTime()"></span>
       </div>
-      <div class="stats-row">
+      <div class="card" id="hold-msg" style="display:none;padding:28px 16px;text-align:center;font-size:13px;color:var(--ink-sub)">홀드 근무 · 체크리스트 없이 출퇴근만 기록해요</div>
+      <div class="stats-row" id="shift-stats-row">
         <div class="stat-box"><div class="stat-label">DONE</div><div class="stat-num green" id="stat-done">0</div><div class="stat-sub">완료</div></div>
         <div class="stat-box"><div class="stat-label">REMAINING</div><div class="stat-num red" id="stat-left">0</div><div class="stat-sub">남음</div></div>
         <div class="stat-box"><div class="stat-label">TOTAL</div><div class="stat-num" id="stat-total">0</div><div class="stat-sub">전체</div></div>
@@ -686,6 +712,7 @@ const DEFAULTS = {
   currentShift: null,
   shifts: [],
   weekSchedule: null,          // { weekKey:"2026-W36", overrides:{ "2026-09-08":{start,end} | null } }
+  cakes: { items: [] },   // [{id, text, state: null|'season'|'noReserve'}]
   settings: {
     email: "",                 // 받는 이메일
     smtpUser: "",              // 발신 Gmail 주소
@@ -749,6 +776,7 @@ function migrateShift(s){
 // 근무 중 shift 는 3블록이 모두 배열이어야 함 — 깨졌으면 템플릿에서 복구
 function ensureShiftBlocks(shift, templates) {
   if (!shift) return shift;
+  if (shift.type === 'hold') return shift;      // 홀드 근무는 체크리스트가 필요 없음
   shift.tasks = (shift.tasks && typeof shift.tasks === 'object') ? shift.tasks : {};
   ['6','8','9'].forEach(k => {
     if (!Array.isArray(shift.tasks[k])) {
@@ -771,6 +799,14 @@ function load() {
   ['1','2'].forEach(k => delete d.settings.fixedDays[k]);   // 월·화 정기 휴무
   if (!d.settings.wage)        d.settings.wage = 11000;
   delete d.settings.web3key;
+
+  if (!d.cakes || typeof d.cakes !== 'object') d.cakes = clone(DEFAULTS.cakes);
+  if (!Array.isArray(d.cakes.items)) {
+    const items = [];
+    (Array.isArray(d.cakes.seasonal)  ? d.cakes.seasonal  : []).forEach(c => items.push({ id: items.length+1, text: c.text, state: 'season' }));
+    (Array.isArray(d.cakes.noReserve) ? d.cakes.noReserve : []).forEach(c => items.push({ id: items.length+1, text: c.text, state: 'noReserve' }));
+    d.cakes = { items };
+  }
 
   // templates 정규화 (currentShift 복구보다 먼저)
   if (!d.templates || typeof d.templates !== 'object') d.templates = clone(DEFAULTS.templates);
@@ -812,6 +848,17 @@ function isoWeekInfo(ref) {
   return { key:`${thu.getFullYear()}-W${pad(weekNo)}`, monday, sunday };
 }
 function weekDays(monday){ return Array.from({length:7},(_,i)=>{ const d=new Date(monday); d.setDate(monday.getDate()+i); return d; }); }
+
+// 근무 시간이 마감 체크리스트 시간대(20:00~21:00)를 포함하면 "마감", 아니면 "홀드"
+function shiftTypeFromTimes(start, end) {
+  if (!start || !end) return 'close';
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  let s = sh*60+sm, e = eh*60+em;
+  if (e <= s) e += 1440;
+  const CLOSE_S = 20*60, CLOSE_E = 21*60;
+  return (s <= CLOSE_S && e >= CLOSE_E) ? 'close' : 'hold';
+}
 
 function plannedHours(p) {
   if (!p) return 0;
@@ -1032,6 +1079,65 @@ function computeGrade(shift) {
   return { perfect: noX && allHandled && perfectStart && perfectEnd };
 }
 
+// ── 케이크 체크 (탭해서 시즌/예약불가 표시) ───────────
+function renderCakeCard() {
+  const data = load();
+  const items = data.cakes.items || [];
+  const chips = items.map(c => `
+    <span class="cake-chip state-${c.state||'none'}" id="chip-${c.id}">
+      <span onclick="cycleCake(${c.id})">${c.text}</span>
+      <button class="cake-chip-icon" onclick="editCakeItem(${c.id})">✎</button>
+      <button class="cake-chip-icon" onclick="delCakeItem(${c.id})">✕</button>
+    </span>`).join('') || `<div class="empty-state" style="padding:10px 0">케이크를 추가하세요</div>`;
+  document.getElementById('cake-body').innerHTML = `
+    <div class="cake-chips">${chips}</div>
+    <div class="modal-hint" style="margin:4px 2px 10px">탭할 때마다 일반 → <span style="color:var(--blue);font-weight:600">시즌</span> → <span style="color:var(--red);font-weight:600">예약 불가</span> 순으로 바뀌어요.</div>
+    <div class="input-row">
+      <input type="text" id="new-cake" placeholder="케이크 이름 추가..." onkeydown="if(event.key==='Enter') addCakeItem()">
+      <button class="btn-add-row" onclick="addCakeItem()">+ ADD</button>
+    </div>`;
+}
+function addCakeItem() {
+  const inp = document.getElementById('new-cake');
+  if (!inp?.value.trim()) return;
+  const data = load();
+  const arr = data.cakes.items;
+  arr.push({ id: arr.length ? Math.max(...arr.map(c=>c.id))+1 : 1, text: inp.value.trim(), state: null });
+  save(data); renderCakeCard();
+}
+function cycleCake(id) {
+  const data = load();
+  const item = data.cakes.items.find(c => c.id === id);
+  if (!item) return;
+  item.state = item.state === null ? 'season' : item.state === 'season' ? 'noReserve' : null;
+  save(data); renderCakeCard();
+}
+function delCakeItem(id) {
+  const data = load();
+  data.cakes.items = data.cakes.items.filter(c => c.id !== id);
+  save(data); renderCakeCard();
+}
+function editCakeItem(id) {
+  const data = load();
+  const item = data.cakes.items.find(c => c.id === id);
+  const chip = document.getElementById('chip-'+id);
+  if (!item || !chip) return;
+  chip.outerHTML = `<div class="edit-row" id="chip-${id}" style="width:100%">
+    <input class="edit-input" id="cei-${id}" value="${item.text}" onkeydown="if(event.key==='Enter') saveCakeItem(${id})">
+    <button class="btn-save-inline" onclick="saveCakeItem(${id})">SAVE</button>
+    <button class="btn-del" onclick="renderCakeCard()">✕</button>
+  </div>`;
+  document.getElementById('cei-'+id)?.focus();
+}
+function saveCakeItem(id) {
+  const val = document.getElementById('cei-'+id)?.value.trim();
+  if (!val) return;
+  const data = load();
+  const item = data.cakes.items.find(c => c.id === id);
+  if (item) item.text = val;
+  save(data); renderCakeCard();
+}
+
 // ── NAVIGATION ────────────────────────────────────────
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1039,7 +1145,7 @@ function showPage(name) {
   document.getElementById('page-'+name).classList.add('active');
   document.getElementById('nav-'+name).classList.add('active');
   window.scrollTo(0,0);
-  if (name==='shift')   renderShift();
+  if (name==='shift')   { renderShift(); renderCakeCard(); }
   if (name==='stats')   renderStats();
   if (name==='history') renderHistory();
   if (name==='edit')    renderEdit();
@@ -1052,13 +1158,17 @@ function startShift() {
   const data  = load();
   const today = todayISO();
   const sched = effectiveSchedule(new Date()).days[today];
+  const type  = shiftTypeFromTimes(sched && sched.start, sched && sched.end);
   const shift = {
     id: Date.now(), date: today,
     startedAt: new Date().toISOString(), endedAt: null,
     planned: sched ? { start: sched.start, end: sched.end } : null,
+    type,
     tasks: {}
   };
-  ['6','8','9'].forEach(k => { shift.tasks[k] = data.templates[k].tasks.map(t => ({...t, status:null})); });
+  if (type !== 'hold') {
+    ['6','8','9'].forEach(k => { shift.tasks[k] = data.templates[k].tasks.map(t => ({...t, status:null})); });
+  }
   data.currentShift = shift;
   save(data); renderShift();
 }
@@ -1167,14 +1277,17 @@ function extraStart() {
   const data = load();
   if (data.currentShift) { toast('이미 근무 중이에요'); closeModal('modal-extra'); showPage('shift'); return; }
 
+  const type = shiftTypeFromTimes(start, end);
   const today = todayISO();
   _ensureWeekSchedule(data);
-  data.weekSchedule.overrides[today] = { start, end };     // 오늘 스케줄·급여에 반영
+  data.weekSchedule.overrides[today] = { start, end };   // 오늘 스케줄·급여에 반영
   if (data.settings.notifiedFor) delete data.settings.notifiedFor[today];
 
   const shift = { id: Date.now(), date: today, startedAt: new Date().toISOString(), endedAt: null,
-                  planned: { start, end }, tasks: {} };
-  ['6','8','9'].forEach(k => { shift.tasks[k] = data.templates[k].tasks.map(t => ({...t, status:null})); });
+                  planned: { start, end }, type, tasks: {} };
+  if (type !== 'hold') {
+    ['6','8','9'].forEach(k => { shift.tasks[k] = data.templates[k].tasks.map(t => ({...t, status:null})); });
+  }
   data.currentShift = shift;
   save(data);
 
@@ -1189,6 +1302,7 @@ function extraSchedule() {
   const { date, start, end } = _extraTimes();
   if (!date || !start || !end) { toast('날짜와 시간을 모두 입력하세요'); return; }
 
+  const type = shiftTypeFromTimes(start, end);
   const data = load();
   const inCurWeek = isoWeekInfo(new Date(date + 'T12:00:00')).key === isoWeekInfo(new Date()).key;
   const isPast = date < todayISO();
@@ -1202,8 +1316,10 @@ function extraSchedule() {
     const s = new Date(date + 'T' + start + ':00');
     const e = new Date(date + 'T' + end + ':00');
     const shift = { id: Date.now(), date, startedAt: s.toISOString(), endedAt: e.toISOString(),
-                    planned: { start, end }, perfect: false, tasks: {} };
-    ['6','8','9'].forEach(k => { shift.tasks[k] = data.templates[k].tasks.map(t => ({...t, status:null})); });
+                    planned: { start, end }, type, perfect: false, tasks: {} };
+    if (type !== 'hold') {
+      ['6','8','9'].forEach(k => { shift.tasks[k] = data.templates[k].tasks.map(t => ({...t, status:null})); });
+    }
     data.shifts.push(shift);
   }
   save(data);
@@ -1279,11 +1395,11 @@ function renderShift() {
     const done = data.shifts.some(x => x.date === iso && x.endedAt);
     const isOv = has(eff.overrides, iso);
     let mid = t
-      ? `<span class="wc-time">${t.start}–${t.end}</span>${isOv?'<span class="wc-tag">수정</span>':''}`
+      ? `<span class="wc-time">${t.start}–${t.end}</span>${isOv?'<span class="wc-tag">수정</span>':''}${shiftTypeFromTimes(t.start,t.end)==='hold'?'<span class="wc-tag" style="background:var(--blue-pale)">홀드</span>':''}`
       : `<span class="wc-off">휴무${isOv?' (수정)':''}</span>`;
     let act = '';
     if (isToday && t && !s && !done) act = `<button class="wc-start" onclick="event.stopPropagation();startShift()">시작</button>`;
-    else if (isToday && done)        act = `<span class="wc-done">✓ 마감</span>`;
+    else if (isToday && done)        act = `<span class="wc-done">✓ 퇴근</span>`;
     else if (isToday)                act = `<span class="wc-done" style="color:var(--ink-muted)">오늘</span>`;
     return `<div class="wc-row ${isToday?'today':''}" onclick="dayTap('${iso}')">
       <span class="wc-day">${d.getMonth()+1}/${d.getDate()} <b>${DAYS_KO[d.getDay()]}</b></span>
@@ -1309,19 +1425,30 @@ function renderShift() {
 
   document.getElementById('active-shift').style.display = s ? 'block' : 'none';
   if (s) {
-    ensureShiftBlocks(s, data.templates);
+    const isHold = s.type === 'hold';
     const startT = timeStr(s.startedAt);
     document.getElementById('shift-start-badge').textContent = startT ? `출근 ${startT}` : '';
-    document.getElementById('shift-blocks').innerHTML = ['6','8','9'].map(k => {
-      const tmpl = data.templates[k] || DEFAULTS.templates[k], crit = k === '9';
-      return `<div class="card">
-        <div class="card-title ${crit?'red-title':''}">${tmpl.label} <span class="time-count" id="count-${k}"></span></div>
-        <div class="time-prog"><div class="time-bar ${crit?'red':''}" id="bar-${k}" style="width:0%"></div></div>
-        <div class="task-list" id="list-${k}"></div>
-      </div>`;
-    }).join('');
-    ['6','8','9'].forEach(k => renderBlock(k, s.tasks[k]));
-    updateStats(s);
+    document.getElementById('hold-msg').style.display       = isHold ? 'block' : 'none';
+    document.getElementById('shift-stats-row').style.display = isHold ? 'none' : 'grid';
+    document.getElementById('shift-blocks').style.display    = isHold ? 'none' : '';
+    document.getElementById('modal-end-text').textContent = isHold
+      ? '퇴근 시각이 지금으로 기록돼요.'
+      : '완료하지 않은 항목이 있을 수 있어요. 종료하면 오늘 근무가 기록으로 저장돼요.';
+    if (isHold) {
+      document.getElementById('all-done').style.display = 'none';
+    } else {
+      ensureShiftBlocks(s, data.templates);
+      document.getElementById('shift-blocks').innerHTML = ['6','8','9'].map(k => {
+        const tmpl = data.templates[k] || DEFAULTS.templates[k], crit = k === '9';
+        return `<div class="card">
+          <div class="card-title ${crit?'red-title':''}">${tmpl.label} <span class="time-count" id="count-${k}"></span></div>
+          <div class="time-prog"><div class="time-bar ${crit?'red':''}" id="bar-${k}" style="width:0%"></div></div>
+          <div class="task-list" id="list-${k}"></div>
+        </div>`;
+      }).join('');
+      ['6','8','9'].forEach(k => renderBlock(k, s.tasks[k]));
+      updateStats(s);
+    }
   }
 
 }
@@ -1335,13 +1462,14 @@ function pastItemHTML(sh, idx) {
   const endT = sh.endedAt ? ' · 퇴근 ' + timeStr(sh.endedAt) : '';
   const cnt  = total ? ` · ${done}/${total}` : '';
   const pf   = sh.perfect ? `<span class="badge badge-done">완봉</span>` : '';
+  const hd   = sh.type === 'hold' ? `<span class="badge badge-partial">홀드</span>` : '';
   return `<div class="past-item">
     <div>
       <div class="past-date">${dateStr(sh.date)}</div>
       <div class="past-meta">${inT}${endT}${cnt}</div>
     </div>
     <div style="display:flex;align-items:center;gap:6px">
-      ${pf}
+      ${pf}${hd}
       <button onclick="editPastShift(${idx})" style="background:none;border:1px solid var(--border-blue);color:var(--blue);font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">수정</button>
       <button onclick="deletePastShift(${idx})" style="background:none;border:1px solid rgba(192,57,43,.3);color:var(--red);font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">삭제</button>
     </div>
@@ -1503,9 +1631,10 @@ function renderStats() {
     const inT  = s.startedAt ? timeStr(s.startedAt) : '—';
     const outT = s.endedAt   ? timeStr(s.endedAt)   : '—';
     const pf   = s.perfect ? `<span class="badge badge-done">완봉</span>` : '';
+    const hd   = s.type === 'hold' ? `<span class="badge badge-partial">홀드</span>` : '';
     return `<div class="past-item">
       <div><div class="past-date">${dateStr(s.date)}</div><div class="past-meta">출근 ${inT} · 퇴근 ${outT}</div></div>
-      ${pf}
+      ${pf}${hd}
     </div>`;
   }).join('') || `<div class="empty-state">아직 근무 기록이 없어요</div>`;
 
@@ -1590,6 +1719,7 @@ function renderFixedDays(data) {
   document.getElementById('fixed-sub').textContent = wkH > 0 ? `주 ${trimH(wkH)}시간` : '고정 근무일';
   document.getElementById('edit-fixed').innerHTML = `
     <div class="sch-week">매주 반복되는 근무 요일 · 시간 (월·화 정기 휴무)</div>
+    <div class="modal-hint" style="padding:0 2px 10px">근무 시간이 20:00~21:00(마감 시간대)을 포함하면 자동으로 "마감" 근무, 아니면 "홀드"(출퇴근만 기록) 근무가 돼요.</div>
     ${rows}
     <div class="sch-actions"><button class="btn-add-row" onclick="saveFixedDays()">고정 근무일 저장</button></div>
     <div class="sch-sub">
@@ -1823,6 +1953,7 @@ window.addEventListener('error', e => {
 (function() {
   try { save(load()); } catch(e) {}
   try { renderShift(); } catch(e) { toast('화면 오류: ' + e.message); }
+  try { renderCakeCard(); } catch(e) {}
   try { renderHistory(); } catch(e) {}
   try { checkWeeklyEmail(); } catch(e) {}
   try { notifyCheck(); } catch(e) {}
